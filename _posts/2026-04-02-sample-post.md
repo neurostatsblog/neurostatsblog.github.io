@@ -1,16 +1,14 @@
 ---
 layout: post
-title: "Gaussian Processes for Neural Decoding: What the Kernel Buys You"
-subtitle: "On the role of covariance structure in latent variable models of population activity"
+title: "Sample Blog Post"
+subtitle: "This is just a test. Please pardon us while we're under construction."
 date: 2026-04-02
 tags: [Gaussian processes, neural decoding, Bayesian inference]
 ---
 
-Neural decoding is often framed as a prediction problem: given a spike train, recover the stimulus or behavioral variable that produced it. But framing it as a *latent variable* problem — where the variable of interest is inferred rather than predicted — opens up a more principled treatment of uncertainty, structure, and generalization. Gaussian processes occupy an interesting niche here, because the choice of kernel directly encodes assumptions about the temporal or spatial structure of the latent variable.
+Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum
 
-This post is a worked-through argument for why the kernel matters, and what it means to choose it well.
-
-## The setup
+## Heading
 
 Let $y_t \in \mathbb{R}^N$ be the spike count vector across $N$ neurons at time $t$, and let $x_t \in \mathbb{R}^d$ be a low-dimensional latent state we want to infer. A standard generative model is:
 
@@ -61,10 +59,6 @@ A few things that bite you in practice:
 **Identifiability.** When $f$ is nonlinear and learned from data, there's a fundamental non-identifiability between the kernel and the tuning function: you can always absorb variance into one or the other. Fixing the output scale of the kernel to 1 and learning a gain parameter in $f$ is one way to handle this, but you should be explicit about what's identified and what isn't.
 
 **Multi-output.** For $N$ neurons, the naive approach uses $N$ independent GPs on the output side. A richer model — the linear model of coregionalization, or a deep kernel — can share statistical strength across neurons. Whether this helps depends on whether neurons share latent inputs, which is precisely what you're often trying to test.
-
-## A brief note on Koopman connections
-
-There's an interesting structural connection between GP-based latent variable models and Koopman operator theory. If the latent dynamics are assumed to follow a linear dynamical system — as in GPFA — the eigenfunctions of the Koopman operator are exponentials, and the GP kernel's spectral density corresponds to the power spectrum of the process. This means that choosing a kernel is, in a precise sense, choosing a Koopman decomposition. I'll write this up more carefully in a future post.
 
 ## Summary
 
