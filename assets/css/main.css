@@ -67,7 +67,7 @@
   --space-24: 6rem;
 
   /* Layout */
-  --content-narrow: 680px;
+  --content-narrow: 860px;
   --content-default: 960px;
   --header-height: 60px;
 
@@ -872,3 +872,4 @@ button { cursor: pointer; background: none; border: none; }
   color: var(--color-text-faint);
   padding-inline: var(--space-1);
 }
+
