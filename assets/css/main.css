@@ -44,13 +44,13 @@
   --shadow-md: 0 4px 14px oklch(0.2 0.01 80 / 0.09);
 
   /* Type scale — fluid */
-  --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
-  --text-sm:   clamp(0.875rem, 0.82rem + 0.3vw,  1rem);
-  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
-  --text-lg:   clamp(1.125rem, 1rem    + 0.65vw, 1.5rem);
-  --text-xl:   clamp(1.5rem,   1.2rem  + 1.2vw,  2.25rem);
-  --text-2xl:  clamp(2rem,     1.4rem  + 2vw,    3rem);
-  --text-hero: clamp(2.5rem,   1.5rem  + 3.5vw,  4rem);
+  --text-xs:   clamp(0.7rem,   0.65rem + 0.25vw, 0.5rem);
+  --text-sm:   clamp(0.8rem,   0.75rem + 0.3vw,  0.5rem);
+  --text-base: clamp(0.875rem, 0.85rem + 0.25vw, 0.5rem);
+  --text-lg:   clamp(1rem,     0.9rem  + 0.65vw, 0.5rem);
+  --text-xl:   clamp(1.35rem,  1.1rem  + 1.2vw,  0.5rem);
+  --text-2xl:  clamp(1.75rem,  1.25rem + 2vw,    0.5rem);
+  --text-hero: clamp(2.2rem,   1.3rem  + 3.5vw,  0.5rem);
 
   /* Spacing */
   --space-1:  0.25rem;
@@ -67,7 +67,7 @@
   --space-24: 6rem;
 
   /* Layout */
-  --content-narrow: 860px;
+  --content-narrow: 960px;
   --content-default: 960px;
   --header-height: 60px;
 
@@ -528,7 +528,7 @@ button { cursor: pointer; background: none; border: none; }
 /* ── 9. Post Body (reading typography) ─────────────────────── */
 .post-body {
   font-family: var(--font-display);
-  font-size: clamp(1.05rem, 1rem + 0.25vw, 1.2rem);
+  font-size: clamp(1.05rem, 1rem + 0.25vw, 0.8rem);
   line-height: 1.75;
   color: var(--color-text);
   font-weight: 300;
@@ -568,7 +568,7 @@ button { cursor: pointer; background: none; border: none; }
 }
 
 .post-body p {
-  max-width: 68ch;
+  max-width: 100%;
 }
 
 .post-body strong { font-weight: 600; }
@@ -873,3 +873,13 @@ button { cursor: pointer; background: none; border: none; }
   padding-inline: var(--space-1);
 }
 
+/* Fix inline MathJax SVG forcing line breaks */
+mjx-container[jax="SVG"] svg {
+  display: inline !important;
+  vertical-align: middle;
+}
+
+mjx-container[jax="SVG"][display="true"] svg {
+  display: block !important;
+  margin: auto;
+}
