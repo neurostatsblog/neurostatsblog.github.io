@@ -1,0 +1,51 @@
+---
+layout: default
+---
+<article class="post-full" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="container-narrow">
+
+    <header class="post-header">
+      <div class="post-meta">
+        <time class="post-date" datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">
+          {{ page.date | date: "%B %-d, %Y" }}
+        </time>
+        {% if page.tags.size > 0 %}
+        <div class="post-tags">
+          {% for tag in page.tags %}
+          <span class="tag">{{ tag }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <h1 class="post-full-title" itemprop="headline">{{ page.title }}</h1>
+
+      {% if page.subtitle %}
+      <p class="post-subtitle">{{ page.subtitle }}</p>
+      {% endif %}
+    </header>
+
+    <div class="post-body" itemprop="articleBody">
+      {{ content }}
+    </div>
+
+    <footer class="post-footer">
+      <div class="post-nav">
+        {% if page.previous.url %}
+        <a href="{{ page.previous.url | relative_url }}" class="post-nav-link post-nav-link--prev">
+          <span class="post-nav-dir">← Older</span>
+          <span class="post-nav-title">{{ page.previous.title }}</span>
+        </a>
+        {% endif %}
+        {% if page.next.url %}
+        <a href="{{ page.next.url | relative_url }}" class="post-nav-link post-nav-link--next">
+          <span class="post-nav-dir">Newer →</span>
+          <span class="post-nav-title">{{ page.next.title }}</span>
+        </a>
+        {% endif %}
+      </div>
+      <a href="{{ '/' | relative_url }}" class="back-to-posts">← All posts</a>
+    </footer>
+
+  </div>
+</article>

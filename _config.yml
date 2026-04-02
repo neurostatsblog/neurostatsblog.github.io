@@ -1,0 +1,56 @@
+title: neurostatsblog
+tagline: Notes on neuroscience, machine learning theory, and statistical inference
+description: >-
+  A research blog covering Gaussian processes, Bayesian inference, neural population coding,
+  dynamical systems, and the mathematics of learning — by a computational neuroscientist at NYU.
+url: "https://neurostatsblog.github.io"
+baseurl: ""
+
+author:
+  name: Alex Williams
+  email: alex.h.willia@gmail.com
+  bio: >-
+    Faculty at NYU working at the intersection of computational neuroscience,
+    machine learning, and statistical inference.
+  links:
+    - label: GitHub
+      url: https://github.com/neurostatsblog
+
+permalink: /:year/:month/:day/:title/
+
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  input: GFM
+  math_engine: mathjax
+  syntax_highlighter: rouge
+
+# Enable math rendering
+mathjax: true
+
+# Plugins supported by GitHub Pages
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Exclude from build
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - .git
+  - .gitignore
+
+# Collections and defaults
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      author: Alex Williams
+
+# Pagination (optional — requires jekyll-paginate plugin)
+# paginate: 10
+# paginate_path: "/page:num/"
