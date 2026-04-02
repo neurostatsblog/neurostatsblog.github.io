@@ -23,6 +23,24 @@ layout: default
       {% if page.subtitle %}
       <p class="post-subtitle">{{ page.subtitle }}</p>
       {% endif %}
+
+      {% if page.authors or page.reviewers %}
+      <div class="post-byline">
+        {% if page.authors %}
+        <span class="byline-item">
+          <span class="byline-label">By</span>
+          {% for author in page.authors %}{{ author }}{% unless forloop.last %}, {% endunless %}{% endfor %}
+        </span>
+        {% endif %}
+        {% if page.reviewers %}
+        <span class="byline-separator" aria-hidden="true">·</span>
+        <span class="byline-item">
+          <span class="byline-label">Reviewed by</span>
+          {% for reviewer in page.reviewers %}{{ reviewer }}{% unless forloop.last %}, {% endunless %}{% endfor %}
+        </span>
+        {% endif %}
+      </div>
+      {% endif %}
     </header>
 
     <div class="post-body" itemprop="articleBody">
