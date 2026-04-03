@@ -47,6 +47,18 @@ bundle exec jekyll serve --livereload
 # Open http://localhost:4000
 ```
 
+With docker...
+
+```bash
+cd neurostatsblog.github.io
+
+docker run --rm -it \
+  -v "$PWD:/srv/jekyll" \
+  -p 4000:4000 \
+  jekyll/jekyll:4 \
+  jekyll serve --host 0.0.0.0
+```
+
 ---
 
 ## Writing a new post
