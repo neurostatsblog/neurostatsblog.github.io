@@ -8,105 +8,173 @@ authors: ["Alex Williams"]
 reviewers: ["n/a"]
 ---
 
-When we design new models of neural or behavioral data, we need to benchmark them against simpler or well-known baselines.
-Typically this is done by reporting the log-likelihood of model predictions on heldout data.
-Clearly, a larger log-likelihood score is indicative of a better model, but (and it feels embarassing to admit this) the units of this metric have never been very intuitive to me.
+Whenever we fit a model to neural or behavioral data, we need to benchmark it against simpler or well-known baselines.
+Typically this is done by reporting the difference in log-likelihoods on heldout data.
+For example, the popular "bits per spike" performance metric is simply the log (base 2) likelihood of the model minus the log (base 2) likelihood of a homogenous Poisson process (or another approriate baseline model), divided by the total number of spikes in the dataset.[^bits-per-spike]
 
-In spiking data, it is common to express performance in units of "bits per spike" which is the log (base 2) likelihood of the model minus the log (base 2) likelihood of the baseline model, normalized by the number of spikes in the dataset.
-For example, [Latimer et al. (2019)](https://doi.org/10.7554/eLife.47012) developed a conductance-based neural encoding model and showed that it yields 0.34 ± 0.11 bits/spike on average over a baseline GLM.
-How should we interpret that 0.34 figure cited in their paper?
+This post offers some thoughts on how we can interpret this performance measure.
+For example, if my model gives a 0.34 bits per spike improvement over the baseline, should I interpret that as very good? Marginal? Completely inconsequential?
 
-This post will outline an intuitive interpretation that I particularly like, which has gained traction in the statistics community (see end of post for more references).
-
-## Math
-
-Let $X_1, X_2, \dots \sim P$ denote a (potentially infinite) sequence of noisy observations from some unknown distribution $P$.
-Let $B$ and $Q$ denote two probability distributions, where $B$ is our "baseline" model and $Q$ is our proposed model.
-We hope that $Q$ is better than $B$ in the sense that it is "closer" to the true distribution $P$.
-
-One way to quantify this is to let $Q$ and $B$ "play a game" by placing bets on the sequence of randomly sampled datapopints to gain units of wealth.
-Let $W_t^Q$ and $W_t^B$ respectively denote the amount of "wealth" accumulated by model $Q$ and model $B$ in the game after playing $t$ rounds of the game.
-At each round, the wealth is updated according to a betting function $S(\cdot)$ as follows:
-
-$$
-W_t^Q = W_{t-1}^Q \cdot S( X_{t} )
-$$
-
-$$
-W_t^B = W_{t-1}^B \cdot \frac{1}{S( X_{t} )}
-$$
-
-Intuitively, model $Q$ should agree to play the game if it believes it's expected reward is positive---i.e., it should agree to play if $\mathbb{E}_{X \sim Q} [ S(X) ] > 1$.
-Similarly, $B$ should agree to play the game if $\mathbb{E}_{X \sim B} [ 1 / S(X) ] > 1$.
+I have struggled to answer these questions satisfactorily and this post is part of my attempt to rectify this fundamental gap in my understanding.
+I'll focus on a particular interpretation that imagines the two models playing against each other in a zero-sum betting game based on forecasting heldout datapoints.
+This game-theoretic framing has gained traction in certain corners of statistics
 
 
-Each model wants to accumulate wealth by betting
+## Basic Setup
 
-We provide each model one initial unit of "wealth" to play this game
+Let's formalize the problem.
+Suppose that we have fit a model $Q$ and a baseline $B$ to a set of "training data" and that we're now ready to compare them head-to-head on a set of heldout test data.
+Let $X_1, X_2, X_3, \dots$ denote a (potentially infinite) sequence of heldout data samples that we'd like to measure.
+We assume these samples are independent and identically distributed according to an unknown distribution $P$.
+Our hope is that $Q$ is in some sense "closer" to the true distribution $P$ than the basline model $B$.
 
-We provide model $Q$ and and model $B$ one initial unit of *wealth*, $W_0 = 1$, which then updated sequentially as follows:
+We will make some mild assumptions.
+In particular, that $Q$ and $B$ have density functions $q(x)$ and $b(x)$, and that these density functions have full support over the space of observations.
+Thus, for any randomly observed datapoint $X \sim P$, we know that $q(X) > 0$ and $b(X) > 0$ almost surely.
+Intuitively, this allows us to compute *likelihood ratios*, $q(X)/b(X)$, without having to worry about divide-by-zero errors.
+This also assures us log-likelihoods, $\log q(X)$ and $\log b(X)$, are always finite.
 
-
-
-
-## Heading
-
-Let $y_t \in \mathbb{R}^N$ be the spike count vector across $N$ neurons at time $t$, and let $x_t \in \mathbb{R}^d$ be a low-dimensional latent state we want to infer. A standard generative model is:
+Given an infinite amount of heldout data, our ideal measure of performance (at least for the purposes of this post) is the expected log-likelihood ratio:
 
 $$
-x \sim \mathcal{GP}(0, k_\theta)
-\qquad
-y_t \mid x_t \sim p(y_t \mid f(x_t))
+\begin{equation}
+\mathcal{L} = \mathbb{E}_{X \sim P} \Big [ \log q(X)/ b(X) \Big ] = \mathbb{E}_{X \sim P} \Big [ \log q(X) - \log b(X) \Big ] 
+\label{eq:expected-log-likelihood-ratio}
+\end{equation}
 $$
 
-where $f: \mathbb{R}^d \to \mathbb{R}^N$ is a tuning function and $k_\theta$ is a kernel with hyperparameters $\theta$. This is, roughly, the structure of GPFA (Yu et al., 2009) and its many descendants.
-
-The GP prior over the latent trajectory does two things: it smooths the inferred path in time (or space), and it controls how uncertainty propagates. The bandwidth of a squared exponential kernel, for instance, sets the timescale over which the latent state is expected to vary. Choose it too short and you overfit to noise; too long and you wash out genuine dynamics.
-
-## What the kernel encodes
-
-Different kernel choices correspond to different beliefs about the latent process:
-
-**Squared exponential (RBF):** $k(t, t') = \sigma^2 \exp\!\left(-\frac{(t-t')^2}{2\ell^2}\right)$. Infinitely differentiable sample paths. Good when the latent variable changes smoothly — e.g., slowly-varying motor variables during reaching. The lengthscale $\ell$ is the key hyperparameter and should be set by marginal likelihood optimization, not by hand.
-
-**Matérn-$\frac{3}{2}$:** $k(t, t') = \sigma^2\!\left(1 + \frac{\sqrt{3}\,|t-t'|}{\ell}\right)\exp\!\left(-\frac{\sqrt{3}\,|t-t'|}{\ell}\right)$. Once-differentiable paths. Better for processes with sharper transients, like peri-event dynamics locked to a stimulus onset.
-
-**Periodic:** $k(t, t') = \sigma^2 \exp\!\left(-\frac{2\sin^2(\pi|t-t'|/p)}{\ell^2}\right)$. Enforces periodicity with period $p$. Useful for oscillatory latents or when you want to model theta-band activity as a structured prior.
-
-**Linear + RBF:** Additive kernels let you separately model a smooth trend and non-stationary drift. This corresponds to assuming a slow underlying state plus fast fluctuations.
-
-The choice is not merely cosmetic. If the true latent is periodic and you use an RBF kernel, you'll systematically misattribute oscillatory structure to noise, inflating your uncertainty estimates and potentially confounding downstream analyses.
-
-## Marginal likelihood as model selection
-
-One of the cleanest properties of GP models is that the marginal likelihood $p(y \mid \theta)$ is available in closed form under Gaussian observations:
+Note that the expectation is computed under $P$. 
+Since $P$ is unknown in real world situations, we can estimate the expression above by holding out a test set with $T$ data samples and approximating the expectation with an empirical average:
 
 $$
-\log p(y \mid \theta) = -\frac{1}{2} y^\top (K_\theta + \sigma_n^2 I)^{-1} y - \frac{1}{2}\log |K_\theta + \sigma_n^2 I| - \frac{n}{2}\log 2\pi
+\mathcal{L} \approx \widehat{\mathcal{L}} = \frac{1}{T} \sum_{t=1}^T \log q(X_t)/ b(X_t)  = \frac{1}{T} \sum_{t=1}^T \Big [ \log q(X) - \log b(X) \Big ] 
+\label{eq:empirical-log-likelihood-ratio}
 $$
 
-The first term rewards fit; the second penalizes model complexity. This is Occam's razor made explicit in the algebra. Maximizing this over $\theta$ — including lengthscale, variance, and noise — is both efficient and principled. For Poisson observations (more realistic for spiking), the marginal likelihood requires approximation (Laplace, variational, etc.), but the structure of the trade-off persists.
+It is worth remarking that this entire post will not deal with the training process---i.e. how does one find $Q$?
+This typically involves optimizing parameters, so one may elsewhere see the liklihood expressed as something like $q (x \mid \theta)$ where $\theta$ denotes trainable parameters.
+However, we don't need to refer to $\theta$ at all for the purposes of this post so we simply write $q(x)$ in place of $q (x \mid \theta)$.
 
-Empirically, marginal likelihood optimization tends to recover sensible lengthscales when the signal-to-noise ratio is reasonable. It breaks down when the number of inducing points is too small (in sparse approximations) or when the likelihood is severely non-Gaussian and the Laplace approximation is poor.
+Similarly, we are often interested in fitting regression models, which predict outcomes (e.g. neural spikes) based on inputs variables (e.g. stimulus or behavioral variables).
+Concretely, suppose that our test data comes as a sequence of paired observations $(X_1, U_1), (X_2, U_2), (X_3, U_3), \dots$ where the $U$'s denote inputs.
+In this case, our model $Q$ and baseline $B$ would now take the form of conditional probability distributions, and the expected log-likelihood ratio would become $\log q ( X \mid U) / b ( X \mid U)$ taken in expectation over $X, U \sim P$.
+So the extension to regression models is immediate and not worth cluttering notation by explicitly denoting input variables.
 
-## Practical considerations
+## Introducing the Game
 
-A few things that bite you in practice:
+Recall that our goal is to come up with intuitive interpretations of $\mathcal{L}$ as a measure of model performance.
+One way to approach this is to imagine model $Q$ and model $B$ "playing a game" against each other by forecasting values of $X_1, X_2, X_3, \dots$ sampled as heldout data.
 
-**Initialization.** The marginal likelihood surface is not convex. Multiple random restarts, or warm-starting from a Fourier analysis of the data (which gives a rough power spectrum → lengthscale correspondence), usually helps.
+The game starts by giving player $Q$ and player $B$ one unit of initial _wealth_:
 
-**Scaling.** Exact GP inference is $O(n^3)$ in the number of timepoints. For trial-length data ($T \lesssim 1000$ bins) this is fine. For long recordings you need sparse approximations — inducing point methods (SVGP, etc.) or state-space equivalents of GPs via the Kalman filter (Solin & Särkkä, 2020), which reduce inference to $O(n)$.
+$$
+W_0^Q = W_0^B = 1
+$$
 
-**Identifiability.** When $f$ is nonlinear and learned from data, there's a fundamental non-identifiability between the kernel and the tuning function: you can always absorb variance into one or the other. Fixing the output scale of the kernel to 1 and learning a gain parameter in $f$ is one way to handle this, but you should be explicit about what's identified and what isn't.
+We use $W_t^Q$ and $W_t^B$ to denote each player's wealth after playing $t$ rounds of the game.
+After each round, the wealth scores are updated according to a _betting function_ $S(x) > 0$ as follows:
 
-**Multi-output.** For $N$ neurons, the naive approach uses $N$ independent GPs on the output side. A richer model — the linear model of coregionalization, or a deep kernel — can share statistical strength across neurons. Whether this helps depends on whether neurons share latent inputs, which is precisely what you're often trying to test.
+$$
+\begin{align}
+W_t^Q &= W_{t-1}^Q \cdot S( X_{t} ) \label{eq:game-1}
+\\
+W_t^B &= W_{t-1}^B / S( X_{t} ) \label{eq:game-2}
+\end{align}
+$$
 
-## Summary
+Note that this is a [zero-sum game](https://en.wikipedia.org/wiki/Zero-sum_game) in terms of log wealth; that is, since $W_t^Q W_t^B = W_0^Q W_0^B$ for all $t$, we have:
 
-The Gaussian process prior in neural decoding is not just a smoothing device — it's a formal encoding of beliefs about latent structure. The kernel determines the inductive bias, the marginal likelihood optimizes hyperparameters in a principled way, and the posterior gives calibrated uncertainty estimates that can be propagated into downstream analyses.
+$$
+\log W_t^Q + \log W_t^B  = 0, \quad \text{for all}~t.
+$$
 
-For most motor decoding problems, an RBF or Matérn kernel with marginal likelihood hyperparameter tuning is a good default. For richer structure — oscillations, non-stationarities, multi-timescale dynamics — additive or spectral kernels are worth the extra complexity. And if your data is long, go to a state-space formulation.
+It is easy to calculate the long-run performance of each player in the game.
+For player $Q$, we have:
+
+$$
+\begin{align}
+W_T^Q = \prod_{t=1}^T S( X_{t} ) 
+      &= \exp \log \prod_{t=1}^T S( X_{t} ) \\
+      &= \exp \sum_{t=1}^T \log S( X_{t} ) \\
+      &= \exp \Big ( T \cdot \Big ( \tfrac{1}{T} \sum_{t=1}^T \log S(X_t) \Big ) \Big ) \\
+      &\approx \exp \Big ( T \cdot \mathbb{E}_{X \sim P} \log S(X) \Big )
+      \label{eq:q-wealth-growth}
+\end{align}
+$$
+
+Note that the approximation in the final line becomes exact as $T \rightarrow \infty$.
+<!-- Thus, under their belief that $P=Q$, player $Q$ believes their wealth will grow exponentially at a rate of $\mathbb{E}_{X \sim Q} \log S(X)$. -->
+By an analogous set of calculations, we find the long-run performance of player $B$ to be
+
+$$
+\begin{align}
+W_T^B &\approx \exp \Big ( -T \cdot \mathbb{E}_{X \sim P} \log S(X) \Big )
+\label{eq:b-wealth-growth}
+\end{align}
+$$
+
+Thus, in the long run, one of the two player's wealth will grow exponentially fast while the other's will decay to zero exponentially quickly.
+Player $Q$ will win if $\mathbb{E}\_{X \sim P} \log S(X)$ is greater than zero and player $B$ will win if $\mathbb{E}\_{X \sim P} \log S(X)$ is less than zero.
+
+<!-- Thus, under their belief that $P=B$, player $B$ believes their wealth will grow exponentially at a rate of $-1 \cdot \mathbb{E}_{X \sim B} \log S(X)$. -->
+
+## The Likelihood Ratio is the "Best" Betting Function
+
+Before they play the game the two players need to agree on a fair betting function, $S(x)$.
+We assume that the two players commit fully to their respective models---that is, player $Q$ believes that $P=Q$ and player $B$ believes that $P=B$.
+
+Somewhat remarkably, this is more-or-less sufficient to pin down a unique solution to the betting function, and this solution is the likelihood ratio:
+
+$$
+\begin{equation}
+S(x) = \frac{q(x)}{b(x)}
+\label{eq:betting-function-equals-likelihood-ratio}
+\end{equation}
+$$
+
+Under a couple technical but reasonable assumptions, it turns out that both players will agree that this betting function is fair.
+Moreover, out of the space of fair betting functions, both players will believe that this choice is maximally beneficial to their long-term wealth growth.
+The math behind this is simple, but it takes a little while to unpack.
+I sketch the proof in [**Supplemental Note 1**](#) of this post.
+
+## The Log Likelihood Ratio Determines Wealth Growth
+
+Combining \eqref{eq:betting-function-equals-likelihood-ratio} with \eqref{eq:q-wealth-growth} and the definition of $\mathcal{L}$ in \eqref{eq:expected-log-likelihood-ratio}, we see that, for large $T$:
+
+$$
+\begin{equation}
+W^Q_T \approx \exp \Big ( \mathcal{L} \cdot T \Big )
+\label{eq:player-q-long-term-wealth}
+\end{equation}
+$$
+
+In other words, the wealth accumulated player $Q$ in the game will, over the long run, grow or decay exponentially fast at a rate given by the expected log-likelihood ratio.
+Likewise, the long-run wealth of player $B$ is well approximated by:
+
+$$
+\begin{equation}
+W^B_T \approx \exp \Big ( -\mathcal{L} \cdot T \Big )
+\label{eq:player-b-long-term-wealth}
+\end{equation}
+$$
+
+Equations \eqref{eq:player-q-long-term-wealth} and \eqref{eq:player-b-long-term-wealth} are the main punchline of this post.
+They reveal that $\mathcal{L}$ represents the rate at which the proposed model $Q$ outperforms (in terms of accumulated wealth) a baseline forecaster using model $B$.
+Importantly, even small amounts of incremental outperformance can snowball into exponentially large gains over the long haul.
+
+We have thus far used natural logarithms, but it may help to substitute base-2 logarithms into the results to aid interpretation.
+By the change of base formula, $\mathcal{L}_2 = \mathcal{L} / \log(2)$ is the expected base-2 log likelihod.
+For large $T$, we have $W^Q_T \approx 2^{\mathcal{L}_2 T}$, and so we can interpret $1 / \mathcal{L}_2$ as the time it takes for $Q$ to double it's wealth on average over the long run.
+
+## Connection to Hypothesis Testing
+
+I personally already find the interpretations sketched above very appealing, more so than thinking about information transmission.
+But what makes this perspective very powerful is the following connection to hypothesis testing, through the following result known as Ville's inequality.
+
+<<INSERT VILLE'S INEQUALITY>>
+
 
 ---
 
-*Further reading:* Yu et al. (2009) GPFA paper; Duncker & Sahani (2018) on structured VAEs for neural data; Solin & Särkkä (2020) on Hilbert space GPs; Rasmussen & Williams (2006) for the GP foundations.
+[^bits-per-spike]: Normalizing by the number of spikes in the dataset has always seemed like a weird choice to me, and I might dig into this in a future post.
+
