@@ -28,11 +28,22 @@ kramdown:
 # Enable math rendering
 mathjax: true
 
-# Plugins supported by GitHub Pages
+# Plugins (site is built by GitHub Actions, so we're not limited to the
+# GitHub Pages plugin allowlist).
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
   - jekyll-sitemap
+  - jekyll-archives
+
+# Generate one page per tag at /tags/<slug>/
+jekyll-archives:
+  enabled:
+    - tags
+  layouts:
+    tag: tag-archive
+  permalinks:
+    tag: /tags/:name/
 
 # Exclude from build
 exclude:
@@ -41,6 +52,9 @@ exclude:
   - README.md
   - .git
   - .gitignore
+  - .github
+  - vendor
+  - .bundle
 
 # Collections and defaults
 defaults:

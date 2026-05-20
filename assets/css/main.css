@@ -449,6 +449,14 @@ button { cursor: pointer; background: none; border: none; }
   background: var(--color-primary-highlight);
   padding: 0.15em 0.55em;
   border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+a.tag:hover,
+a.tag:focus-visible {
+  background: var(--color-primary);
+  color: var(--color-bg, #fff);
 }
 
 [data-theme="dark"] .tag { opacity: 0.85; }
@@ -873,6 +881,19 @@ button { cursor: pointer; background: none; border: none; }
   padding-inline: var(--space-1);
 }
 
+.byline-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.byline-link:hover,
+.byline-link:focus-visible {
+  color: var(--color-primary);
+  border-bottom-color: currentColor;
+}
+
 /* Fix inline MathJax SVG forcing line breaks */
 mjx-container[jax="SVG"] svg {
   display: inline !important;
@@ -882,4 +903,114 @@ mjx-container[jax="SVG"] svg {
 mjx-container[jax="SVG"][display="true"] svg {
   display: block !important;
   margin: auto;
+}
+
+/* ── 14. Search ────────────────────────────────────────────── */
+
+/* Header search — input on wide viewports, icon on narrow. */
+.header-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-inline: var(--space-2);
+}
+
+.header-search-icon {
+  position: absolute;
+  left: 0.55rem;
+  color: var(--color-text-faint);
+  pointer-events: none;
+}
+
+.header-search-input {
+  width: 11rem;
+  padding: 0.35rem 0.6rem 0.35rem 1.85rem;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: color-mix(in oklab, var(--color-bg) 60%, var(--color-divider) 40%);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color var(--transition), background var(--transition), width var(--transition);
+}
+
+.header-search-input::placeholder { color: var(--color-text-faint); }
+
+.header-search-input:focus {
+  border-color: var(--color-primary);
+  background: var(--color-bg);
+}
+
+/* Below the breakpoint, hide the input and show the icon link. */
+.nav-link--search-icon { display: none; }
+
+@media (max-width: 768px) {
+  .header-search { display: none; }
+  .nav-link--search-icon { display: flex; }
+}
+
+/* Search page */
+.search-page {
+  padding-block: var(--space-8) var(--space-12);
+}
+
+.search-header {
+  margin-bottom: var(--space-6);
+}
+
+.search-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-4);
+}
+
+.search-form {
+  margin: 0;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  font-size: var(--text-md);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.search-input::placeholder { color: var(--color-text-faint); }
+
+.search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 18%, transparent);
+}
+
+.search-status {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  margin-bottom: var(--space-4);
+  min-height: 1.5em;
+}
+
+.search-results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Pagefind wraps matches in <mark> inside the excerpt. */
+.search-results mark,
+.post-excerpt mark {
+  background: var(--color-primary-highlight);
+  color: var(--color-primary);
+  padding: 0 0.15em;
+  border-radius: 2px;
+  font-weight: 500;
 }

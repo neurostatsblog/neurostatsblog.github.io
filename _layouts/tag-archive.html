@@ -1,0 +1,51 @@
+---
+layout: default
+---
+{%- comment -%}
+  jekyll-archives passes `page.title` = the tag name and
+  `page.posts` = the posts tagged with it.
+{%- endcomment -%}
+<section class="tag-archive" data-pagefind-body>
+  <div class="container-narrow">
+
+    <span class="sr-only" data-pagefind-meta="title">Tag: {{ page.title }}</span>
+
+    <header class="tag-archive-header">
+      <p class="tag-archive-eyebrow">Tag</p>
+      <h1 class="tag-archive-title">{{ page.title }}</h1>
+      <p class="tag-archive-count">
+        {{ page.posts | size }} post{% if page.posts.size != 1 %}s{% endif %}
+      </p>
+    </header>
+
+    <ol class="post-list" role="list" data-pagefind-ignore>
+      {% for post in page.posts %}
+      <li class="post-item">
+        <article>
+          <div class="post-meta">
+            <time class="post-date" datetime="{{ post.date | date_to_xmlschema }}">
+              {{ post.date | date: "%B %-d, %Y" }}
+            </time>
+            {% if post.tags.size > 0 %}
+            <div class="post-tags">
+              {% for tag in post.tags %}
+              {% assign tag_slug = tag | slugify %}
+              <a class="tag" href="{{ '/tags/' | append: tag_slug | append: '/' | relative_url }}">{{ tag }}</a>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          <h2 class="post-title">
+            <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+          </h2>
+          {% if post.excerpt %}
+          <p class="post-excerpt">{{ post.excerpt | strip_html | truncate: 220 }}</p>
+          {% endif %}
+        </article>
+      </li>
+      {% endfor %}
+    </ol>
+
+    <p><a class="back-to-posts" href="{{ '/' | relative_url }}">← All posts</a></p>
+  </div>
+</section>
