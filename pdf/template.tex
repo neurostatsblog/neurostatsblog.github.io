@@ -1,0 +1,66 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{fancyhdr}
+\usepackage{titling}
+
+% Pandoc commonly emits these
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+
+% Tighter spacing for footnotes (matches blog style)
+\usepackage[hang,flushmargin,bottom]{footmisc}
+\setlength{\footnotemargin}{1em}
+
+% Paragraph style
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+
+% Section heading style
+\usepackage{titlesec}
+\titleformat*{\section}{\Large\bfseries}
+\titleformat*{\subsection}{\large\bfseries}
+\titleformat*{\subsubsection}{\normalsize\bfseries}
+
+% Title block
+\pretitle{\begin{center}\LARGE\bfseries\hspace{0pt}}
+\posttitle{\par\end{center}\vskip 0.3em}
+\preauthor{\begin{center}\normalsize\hspace{0pt}}
+\postauthor{\par\end{center}}
+\predate{\begin{center}\small\itshape\hspace{0pt}}
+\postdate{\par\end{center}\vskip 1em}
+
+$if(title)$
+\title{$title$$if(subtitle)$\\[0.3em]{\normalsize\mdseries\textit{$subtitle$}}$endif$}
+$endif$
+$if(authors)$
+\author{$for(authors)$$authors$$sep$ \and $endfor$}
+$endif$
+$if(date)$
+\date{$date$}
+$else$
+\date{}
+$endif$
+
+\begin{document}
+
+$if(title)$
+\maketitle
+$endif$
+
+$body$
+
+\end{document}

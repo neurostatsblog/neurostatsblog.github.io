@@ -163,18 +163,54 @@ They reveal that $\mathcal{L}$ represents the rate at which the proposed model $
 Importantly, even small amounts of incremental outperformance can snowball into exponentially large gains over the long haul.
 
 We have thus far used natural logarithms, but it may help to substitute base-2 logarithms into the results to aid interpretation.
-By the change of base formula, $\mathcal{L}_2 = \mathcal{L} / \log(2)$ is the expected base-2 log likelihod.
+By the change of base formula, $\mathcal{L}_2 = \mathcal{L} / \log(2)$ is the expected base-2 log likelihood.
 For large $T$, we have $W^Q_T \approx 2^{\mathcal{L}_2 T}$, and so we can interpret $1 / \mathcal{L}_2$ as the time it takes for $Q$ to double it's wealth on average over the long run.
 
 ## Connection to Hypothesis Testing
 
 I personally already find the interpretations sketched above very appealing, more so than thinking about information transmission.
-But what makes this perspective very powerful is the following connection to hypothesis testing, through the following result known as Ville's inequality.
+But what makes this perspective very powerful is the following connection to hypothesis testing, through the following result known as [Ville's inequality](https://en.wikipedia.org/wiki/Ville%27s_inequality).
 
-<<INSERT VILLE'S INEQUALITY>>
+<div class="callout callout-theorem">
+<p><strong>Ville's Inequality (informal).</strong> Let $(M_t)_{t \geq 0}$ be a sequence of random variables such that $M_t \geq 0$ almost surely for all $t$ and $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ for all $t$.
+Then for any $\alpha > 0$,</p>
+$$
+P\!\left( \sup_{t \geq 0} M_t \, \geq \, 1/\alpha \right) \, \leq \, \alpha \cdot \mathbb{E}[M_0] .
+$$
+</div>
+
+Intuitively, this result states that if the random sequence $(M\_t)\_{t \geq 0}$ is memoryless and not increasing it expectation,[^martingale] then $M_t$ cannot be very large at *any moment in time*. 
+
+To see why this matters in our setting, suppose for the moment that the baseline $B$ is in fact the true data-generating distribution---i.e. $P = B$. 
+Under this assumption, the wealth process $(W\_t^Q)\_{t \geq 0}$ satisfies all the conditions placed on $(M_t)_{t \geq 0}$ in Ville's inequality.
+This is easy to check:
+
+$$
+\mathbb{E}_{X_t \sim B}\!\big[ W_t^Q \mid W_0^Q \dots W_{t-1}^Q \big]
+\,=\, W_{t-1}^Q \cdot \mathbb{E}_{X_t \sim B} \left[ \frac{q(X_t)}{b(X_t)} \right]
+\,=\, W_{t-1}^Q .
+$$
+
+since the expectation of the likelihood ratio equals one.[^expectation-derivation]
+Ville's inequality then tells us that the probability of player $Q$'s wealth *ever* exceeding the threshold $1/\alpha$---at any round of the game---is at most $\alpha$:
+
+$$
+P\!\left( \sup_{t \geq 0} W_t^Q \, \geq \, 1/\alpha \right) \, \leq \, \alpha .
+$$
+
+This furnishes an *anytime-valid* hypothesis test of the null $H_0 : P = B$: we may reject $H_0$ at level $\alpha$ as soon as $W_t^Q$ crosses $1/\alpha$, regardless of how many rounds have been played. Unlike classical fixed-sample tests, we are free to peek at the data, stop early, or keep collecting more samples adaptively, all without inflating the type I error rate.
+
+For example, if we adopt the customary significance threshold of $\alpha = 0.05$, then Ville's inequality tells us that we can reject the null hypothesis that $P = B$ if player $Q$'s wealth ever exceeds 20.
+
 
 
 ---
 
 [^bits-per-spike]: Normalizing by the number of spikes in the dataset has always seemed like a weird choice to me, and I might dig into this in a future post.
+
+[^martingale]: For those who appreciate jargon, we call $(M\_t)\_{t \geq 0}$ a *supermartingale* if it satisfies $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ and we call $(M\_t)\_{t \geq 0}$ a [martingale](https://en.wikipedia.org/wiki/Martingale_(probability_theory) $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] = M_{t-1}$, we call $(M_t)_{t \geq 0}$. Ville's inequality says that all nonnegative martingales and supermartingales are upper bounded 
+
+[^expectation-derivation]: Concretely, $\mathbb{E}_{X \sim B} \left[ \frac{q(X)}{b(X)} \right] = \int \frac{q(x)b(x)}{b(x)} dx =  \int q(x) dx = 1$.
+
+
 

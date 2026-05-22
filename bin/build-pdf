@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Build a PDF from a Jekyll post using pandoc + XeLaTeX in Docker.
+#
+# Usage:
+#   bin/build-pdf _posts/2026-05-13-model-comparison-by-betting.md
+#   bin/build-pdf _posts/2026-05-13-model-comparison-by-betting.md custom-name
+#   bin/build-pdf --all
+#
+# Output: pdfs/<slug>.pdf
+# The leading YYYY-MM-DD- date is stripped from the filename to form the slug.
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$repo_root"
+
+build_one() {
+  local input_path="$1"
+  local override_slug="${2:-}"
+
+  if [[ ! -f "$input_path" ]]; then
+    echo "error: $input_path not found" >&2
+    return 1
+  fi
+
+  local base slug
+  base="$(basename "$input_path" .md)"
+  if [[ -n "$override_slug" ]]; then
+    slug="$override_slug"
+  else
+    # Strip leading YYYY-MM-DD- if present
+    slug="$(echo "$base" | sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}-//')"
+  fi
+
+  mkdir -p pdfs
+
+  echo "→ building pdfs/${slug}.pdf from ${input_path}"
+
+  # Run pandoc inside the `pdf` service. The repo is mounted at /data.
+  docker compose run --rm pdf "pandoc \
+    --from=markdown+yaml_metadata_block+tex_math_dollars+footnotes+raw_tex \
+    --to=pdf \
+    --pdf-engine=pdflatex \
+    --standalone \
+    --template=/data/pdf/template.tex \
+    --output=/data/pdfs/${slug}.pdf \
+    /data/${input_path}"
+}
+
+if [[ $# -eq 0 ]]; then
+  echo "usage: $0 <post.md> [slug]" >&2
+  echo "       $0 --all" >&2
+  exit 1
+fi
+
+if [[ "$1" == "--all" ]]; then
+  for post in _posts/*.md; do
+    build_one "$post"
+  done
+else
+  build_one "$1" "${2:-}"
+fi
+
+echo "done."

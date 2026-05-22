@@ -41,6 +41,9 @@ exclude:
   - README.md
   - .git
   - .gitignore
+  - Dockerfile
+  - docker-compose.yml
+  - vendor
 
 # Collections and defaults
 defaults:

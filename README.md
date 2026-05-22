@@ -123,6 +123,22 @@ GitHub Actions rebuilds the site automatically. Changes are live in ~60 seconds.
 
 ---
 
+## Building a post as a PDF
+
+The repo includes a pandoc-based PDF pipeline (XeLaTeX backend) that runs in Docker — no host install of TeX needed.
+
+```bash
+# Build one post
+bin/build-pdf _posts/2026-05-13-model-comparison-by-betting.md
+
+# Build everything in _posts/
+bin/build-pdf --all
+```
+
+Output is written to `pdfs/<slug>.pdf` (gitignored). The first run pulls the `pandoc/extra` image (~1.5 GB); subsequent runs are fast. Math, footnotes, and standard markdown features are all supported. The LaTeX template lives at `pdf/template.tex` — tweak it if you want different typography or a custom title block.
+
+---
+
 ## Site structure
 
 ```
