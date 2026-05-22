@@ -532,6 +532,15 @@ button { cursor: pointer; background: none; border: none; }
   line-height: 1.75;
   color: var(--color-text);
   font-weight: 300;
+  display: flex;
+  flex-direction: column;
+}
+
+.post-body > .supplementary-notes {
+  order: 1;
+  margin-top: var(--space-12);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-code-border);
 }
 
 .post-body > * + * { margin-top: var(--space-5); }
@@ -607,6 +616,16 @@ button { cursor: pointer; background: none; border: none; }
   border-top: 1px solid var(--color-code-border);
   font-size: 0.9em;
   color: var(--color-text-muted);
+}
+.post-body .footnotes::before {
+  content: "Footnotes";
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-3);
+  color: var(--color-text);
 }
 .post-body .footnotes ol {
   max-width: 100%;

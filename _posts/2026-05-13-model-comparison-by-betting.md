@@ -21,7 +21,6 @@ This game-theoretic framing has gained traction in a certain corner of statistic
 
 ## Basic Setup
 
-Let's formalize the problem.
 Suppose that we have fit a model $Q$ and a baseline $B$ to a set of "training data" and that we're now ready to compare them head-to-head on a set of heldout test data.
 Let $X_1, X_2, X_3, \dots$ denote a (potentially infinite) sequence of heldout data samples that we'd like to measure.
 We assume these samples are independent and identically distributed according to an unknown distribution $P$.
@@ -31,7 +30,7 @@ We will make some mild assumptions.
 In particular, that $Q$ and $B$ have density functions $q(x)$ and $b(x)$, and that these density functions have full support over the space of observations.
 Thus, for any randomly observed datapoint $X \sim P$, we know that $q(X) > 0$ and $b(X) > 0$ almost surely.
 Intuitively, this allows us to compute *likelihood ratios*, $q(X)/b(X)$, without having to worry about divide-by-zero errors.
-This also assures us log-likelihoods, $\log q(X)$ and $\log b(X)$, are always finite.
+This also assures us that log-likelihoods, $\log q(X)$ and $\log b(X)$, are always finite.
 
 Given an infinite amount of heldout data, our ideal measure of performance (at least for the purposes of this post) is the expected log-likelihood ratio:
 
@@ -54,10 +53,10 @@ It is worth remarking that this entire post will not deal with the training proc
 This typically involves optimizing parameters, so one may elsewhere see the liklihood expressed as something like $q (x \mid \theta)$ where $\theta$ denotes trainable parameters.
 However, we don't need to refer to $\theta$ at all for the purposes of this post so we simply write $q(x)$ in place of $q (x \mid \theta)$.
 
-Similarly, we are often interested in fitting regression models, which predict outcomes (e.g. neural spikes) based on inputs variables (e.g. stimulus or behavioral variables).
+<!-- Similarly, we are often interested in fitting regression models, which predict outcomes (e.g. neural spikes) based on inputs variables (e.g. stimulus or behavioral variables).
 Concretely, suppose that our test data comes as a sequence of paired observations $(X_1, U_1), (X_2, U_2), (X_3, U_3), \dots$ where the $U$'s denote inputs.
 In this case, our model $Q$ and baseline $B$ would now take the form of conditional probability distributions, and the expected log-likelihood ratio would become $\log q ( X \mid U) / b ( X \mid U)$ taken in expectation over $X, U \sim P$.
-So the extension to regression models is immediate and not worth cluttering notation by explicitly denoting input variables.
+So the extension to regression models is immediate and not worth cluttering notation by explicitly denoting input variables. -->
 
 ## Introducing the Game
 
@@ -81,10 +80,10 @@ W_t &= W_{t-1} \cdot S( X_{t} ) . \label{eq:wealth-process}
 $$
 
 To play the game, $Q$ needs to pay a price to buy the contract *S* on the free market.
-There is a very basic argument that the fair price is given by the expected value of the contract's payoff under the *average beliefs* of all market participants (see [Supplementary Note 1](#)).
+There is a very basic argument that the fair price is given by the expected value of the contract's payoff under the *average beliefs* of all market participants (see [**Supplementary Note 1**](#supplementary-note-1)).
 Here we will assume that player $Q$ only represents a very small part of the market,[^q-small] and that the market's beliefs are reflected by the baseline model $B$.
 
-Under these assumptions it can be shown (see [Supplementary Note 1](#)) that player $Q$ can purchase for a price $p$, any contract function $S(\cdot)$ satisfying the constraint that:
+Under these assumptions it can be shown (see [**Supplementary Note 1**](#supplementary-note-1)) that a contract $S$ sold for price $p$ must satisfy the constraint that:
 
 $$
 \begin{equation}
@@ -122,7 +121,7 @@ W_T = \prod_{t=1}^T S( X_{t} )
 $$
 
 units of wealth.
-The approximation in the final line comes from replacing the empirical expectation $\tfrac{1}{T} \sum_{t=1}^T \log S(X_t)$ with the expectation under $P$.
+The approximation in the final line comes from replacing the empirical expectation $\tfrac{1}{T} \sum_{t=1}^T \log S(X_t)$ with the true expected value under $P$.
 
 Since the player believes that $P = Q$, they anticipate to maximize their exponential rate of wealth growth under \eqref{eq:q-wealth-growth} by choosing $S(\cdot)$ in order to
 
@@ -131,7 +130,7 @@ $$
 \label{eq:kelly-criterion}
 $$
 
-Quite pleasingly, as shown in [**Supplemental Note 2**](#), the solution to this optimization problem turns out to be the likelihood ratio!
+Quite pleasingly, as shown in [**Supplemental Note 2**](#supplementary-note-2), the solution to this optimization problem turns out to be the likelihood ratio!
 
 $$
 \begin{equation}
@@ -197,8 +196,6 @@ $$
 This furnishes an *anytime-valid* hypothesis test of the null $H_0 : P = B$: we may reject $H_0$ at level $\alpha$ as soon as $W_t^Q$ crosses $1/\alpha$, regardless of how many rounds have been played. Unlike classical fixed-sample tests, we are free to peek at the data, stop early, or keep collecting more samples adaptively, all without inflating the type I error rate.
 For example, if we use $\alpha = 0.05$ (as is customary), then we can reject the null hypothesis that $P = B$ if player $Q$'s wealth *ever* exceeds 20.
 
-
-
 ---
 
 ### Further Reading
@@ -224,8 +221,43 @@ Textbook Ramdas and Wang (2025). ["Hypothesis Testing With E-Values."](https://w
 
 [^expectation-derivation]: Concretely, $\mathbb{E}_{X \sim B} \left[ \frac{q(X)}{b(X)} \right] = \int \frac{q(x)b(x)}{b(x)} dx =  \int q(x) dx = 1$.
 
----
+<div class="supplementary-notes" markdown="1">
 
 ## Supplementary Note 1
 
+Here we sketch how the market price constraint \eqref{eq:pricing-constraint} arises in more detail.
+For simplicity, let's consider a case where the random outcomes $X \sim P$ take on one of $n$ discrete values.
+That is, $X \in \\{1, \dots, n\\}$ almost surely.
+The same argument can be extended to continuous-valued random variables with sufficient care.
+
+By assuming there are only $n$ discrete outcomes, then we can express any potential contract function $S(\cdot)$ as a linear combination of elementary basis functions:
+
+$$
+S(X) = u_1 \delta_1(X) + \dots + u_n \delta_n(X)
+$$
+
+where $u_1, \dots, u_n$ are scalar coefficients and
+
+$$
+\delta_i(x) = \begin{cases}
+1 & x = i \\
+0 & x \neq i
+\end{cases}.
+$$
+
+Let $\pi(S)$ denote the price of a contract function $S$. 
+Our goal will be to show that:
+
+$$
+\pi(S) = \mathbb{E}_{X \sim B}  \left [ S(X) \right ]
+$$
+
+for an appropriate choice of distribution $B$.
+We will show that this is true if the market is organized such that no player can recieve "free money" without taking any risk (in other words, there are no [arbitrage](https://en.wikipedia.org/wiki/Arbitrage) opportunities).
+
+**The pricing function $\pi$ must be linear.** For any scalar $c$ we have we must have $\pi(c \cdot S) = c \pi(S)$. Otherwise, 
+
+
 ## Supplementary Note 2
+
+</div>
