@@ -567,8 +567,13 @@ button { cursor: pointer; background: none; border: none; }
   color: var(--color-text-muted);
 }
 
-.post-body p {
+.post-body p,
+.post-body li {
   max-width: 100%;
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
+  -webkit-hyphens: auto;
 }
 
 .post-body strong { font-weight: 600; }

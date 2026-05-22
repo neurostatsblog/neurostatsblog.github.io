@@ -16,9 +16,8 @@ This post offers some thoughts on how we can interpret this performance measure.
 For example, if my model gives a 0.34 bits per spike improvement over the baseline, should I interpret that as very good? Marginal? Completely inconsequential?
 
 I have struggled to answer these questions satisfactorily and this post is part of my attempt to rectify this fundamental gap in my understanding.
-I'll focus on a particular interpretation that imagines the two models playing against each other in a zero-sum betting game based on forecasting heldout datapoints.
-This game-theoretic framing has gained traction in certain corners of statistics
-
+I'll focus on a particular interpretation that imagines the model playing a betting game against the "market" defined by the baseline model.
+This game-theoretic framing has gained traction in a certain corner of statistics, a lot of which is very accesible in recent tutorials and reviews (see [**Further Reading**](#further-reading)).
 
 ## Basic Setup
 
@@ -63,37 +62,57 @@ So the extension to regression models is immediate and not worth cluttering nota
 ## Introducing the Game
 
 Recall that our goal is to come up with intuitive interpretations of $\mathcal{L}$ as a measure of model performance.
-One way to approach this is to imagine model $Q$ and model $B$ "playing a game" against each other by forecasting values of $X_1, X_2, X_3, \dots$ sampled as heldout data.
+One way to approach this is to imagine model $Q$ as a "player" in a betting game based on forecasting values of $X_1, X_2, X_3, \dots$ sampled as heldout data.
+The bets made by the player are set by the "market" which operates according to the baseline model $B$.
 
-The game starts by giving player $Q$ and player $B$ one unit of initial _wealth_:
+The game starts by giving player $Q$ one unit of wealth:
 
 $$
-W_0^Q = W_0^B = 1
+W_0 = 1
 $$
 
-We use $W_t^Q$ and $W_t^B$ to denote each player's wealth after playing $t$ rounds of the game.
-After each round, the wealth scores are updated according to a _betting function_ $S(x) > 0$ as follows:
+We use $W_t$ denote the player's wealth after playing $t$ rounds of the game.
+After each round, the wealth is updated according to a *betting function* or *contract* $S(x) > 0$ as follows:
 
 $$
 \begin{align}
-W_t^Q &= W_{t-1}^Q \cdot S( X_{t} ) \label{eq:game-1}
-\\
-W_t^B &= W_{t-1}^B / S( X_{t} ) \label{eq:game-2}
+W_t &= W_{t-1} \cdot S( X_{t} ) . \label{eq:wealth-process}
 \end{align}
 $$
 
-Note that this is a [zero-sum game](https://en.wikipedia.org/wiki/Zero-sum_game) in terms of log wealth; that is, since $W_t^Q W_t^B = W_0^Q W_0^B$ for all $t$, we have:
+To play the game, $Q$ needs to pay a price to buy the contract *S* on the free market.
+There is a very basic argument that the fair price is given by the expected value of the contract's payoff under the *average beliefs* of all market participants (see [Supplementary Note 1](#)).
+Here we will assume that player $Q$ only represents a very small part of the market,[^q-small] and that the market's beliefs are reflected by the baseline model $B$.
+
+Under these assumptions it can be shown (see [Supplementary Note 1](#)) that player $Q$ can purchase for a price $p$, any contract function $S(\cdot)$ satisfying the constraint that:
 
 $$
-\log W_t^Q + \log W_t^B  = 0, \quad \text{for all}~t.
+\begin{equation}
+\mathbb{E}_{X \sim B} \, \big [ \, p \cdot S(X) \, \big ] \leq p . \label{eq:pricing-constraint-verbose}
+\end{equation}
 $$
 
-It is easy to calculate the long-run performance of each player in the game.
-For player $Q$, we have:
+which is obviously equivalent to the constraint that:
+
+$$
+\begin{equation}
+\mathbb{E}_{X \sim B} \, \big [ \, S(X) \, \big ] \leq 1 . \label{eq:pricing-constraint}
+\end{equation}
+$$
+
+Under this pricing constraint, there is a very straightforward interpretation of the wealth update equation, given by \eqref{eq:wealth-process}.
+At each round of betting, the player has $W_t$ units of wealth to purchase contracts on the free market.
+We assume they bet everything---i.e. they purchase a contract with at price $p = W_t$ whose payoff is equal to $p \cdot S(X)$.
+Thus, at the next round of betting the player will have $W_{t+1} = p \cdot S(X_t) = W_t \cdot S(X_t)$ units of wealth.
+
+## Choosing the optimal contract function
+
+Out of all the feasible contract functions that satisfy this constraint, what should $Q$ choose to play?
+Over a very large number of betting rounds, say $T$, the player will accumulate
 
 $$
 \begin{align}
-W_T^Q = \prod_{t=1}^T S( X_{t} ) 
+W_T = \prod_{t=1}^T S( X_{t} ) 
       &= \exp \log \prod_{t=1}^T S( X_{t} ) \\
       &= \exp \sum_{t=1}^T \log S( X_{t} ) \\
       &= \exp \Big ( T \cdot \Big ( \tfrac{1}{T} \sum_{t=1}^T \log S(X_t) \Big ) \Big ) \\
@@ -102,28 +121,17 @@ W_T^Q = \prod_{t=1}^T S( X_{t} )
 \end{align}
 $$
 
-Note that the approximation in the final line becomes exact as $T \rightarrow \infty$.
-<!-- Thus, under their belief that $P=Q$, player $Q$ believes their wealth will grow exponentially at a rate of $\mathbb{E}_{X \sim Q} \log S(X)$. -->
-By an analogous set of calculations, we find the long-run performance of player $B$ to be
+units of wealth.
+The approximation in the final line comes from replacing the empirical expectation $\tfrac{1}{T} \sum_{t=1}^T \log S(X_t)$ with the expectation under $P$.
+
+Since the player believes that $P = Q$, they anticipate to maximize their exponential rate of wealth growth under \eqref{eq:q-wealth-growth} by choosing $S(\cdot)$ in order to
 
 $$
-\begin{align}
-W_T^B &\approx \exp \Big ( -T \cdot \mathbb{E}_{X \sim P} \log S(X) \Big )
-\label{eq:b-wealth-growth}
-\end{align}
+\text{maximize} ~~ \mathbb{E}_{X \sim Q} \log S(X) \quad \text{subject to} ~ \eqref{eq:pricing-constraint}.
+\label{eq:kelly-criterion}
 $$
 
-Thus, in the long run, one of the two player's wealth will grow exponentially fast while the other's will decay to zero exponentially quickly.
-Player $Q$ will win if $\mathbb{E}\_{X \sim P} \log S(X)$ is greater than zero and player $B$ will win if $\mathbb{E}\_{X \sim P} \log S(X)$ is less than zero.
-
-<!-- Thus, under their belief that $P=B$, player $B$ believes their wealth will grow exponentially at a rate of $-1 \cdot \mathbb{E}_{X \sim B} \log S(X)$. -->
-
-## The Likelihood Ratio is the "Best" Betting Function
-
-Before they play the game the two players need to agree on a fair betting function, $S(x)$.
-We assume that the two players commit fully to their respective models---that is, player $Q$ believes that $P=Q$ and player $B$ believes that $P=B$.
-
-Somewhat remarkably, this is more-or-less sufficient to pin down a unique solution to the betting function, and this solution is the likelihood ratio:
+Quite pleasingly, as shown in [**Supplemental Note 2**](#), the solution to this optimization problem turns out to be the likelihood ratio!
 
 $$
 \begin{equation}
@@ -132,39 +140,27 @@ S(x) = \frac{q(x)}{b(x)}
 \end{equation}
 $$
 
-Under a couple technical but reasonable assumptions, it turns out that both players will agree that this betting function is fair.
-Moreover, out of the space of fair betting functions, both players will believe that this choice is maximally beneficial to their long-term wealth growth.
-The math behind this is simple, but it takes a little while to unpack.
-I sketch the proof in [**Supplemental Note 1**](#) of this post.
-
-## The Log Likelihood Ratio Determines Wealth Growth
-
-Combining \eqref{eq:betting-function-equals-likelihood-ratio} with \eqref{eq:q-wealth-growth} and the definition of $\mathcal{L}$ in \eqref{eq:expected-log-likelihood-ratio}, we see that, for large $T$:
+Combining equations \eqref{eq:betting-function-equals-likelihood-ratio} and \eqref{eq:q-wealth-growth} with the definition of $\mathcal{L}$ in \eqref{eq:expected-log-likelihood-ratio}, we see that the long-run wealth of the player is approximated by
 
 $$
 \begin{equation}
-W^Q_T \approx \exp \Big ( \mathcal{L} \cdot T \Big )
+W_T \approx \exp \Big ( \mathcal{L} \cdot T \Big )
 \label{eq:player-q-long-term-wealth}
 \end{equation}
 $$
 
-In other words, the wealth accumulated player $Q$ in the game will, over the long run, grow or decay exponentially fast at a rate given by the expected log-likelihood ratio.
-Likewise, the long-run wealth of player $B$ is well approximated by:
+for large $T$.
+In other words, the wealth accumulated player $Q$ in the game will, over the long run, grow or decay exponentially fast at a rate given by the expected log-likelihood ratio.[^kelly]
 
-$$
-\begin{equation}
-W^B_T \approx \exp \Big ( -\mathcal{L} \cdot T \Big )
-\label{eq:player-b-long-term-wealth}
-\end{equation}
-$$
+## Some Interpretation
 
-Equations \eqref{eq:player-q-long-term-wealth} and \eqref{eq:player-b-long-term-wealth} are the main punchline of this post.
-They reveal that $\mathcal{L}$ represents the rate at which the proposed model $Q$ outperforms (in terms of accumulated wealth) a baseline forecaster using model $B$.
+Equation \eqref{eq:player-q-long-term-wealth} is one of the main punchlines of this post.
+It reveals that $\mathcal{L}$ represents the rate at which the proposed model $Q$ outperforms (in terms of accumulated wealth) a baseline forecaster using model $B$.
 Importantly, even small amounts of incremental outperformance can snowball into exponentially large gains over the long haul.
 
 We have thus far used natural logarithms, but it may help to substitute base-2 logarithms into the results to aid interpretation.
 By the change of base formula, $\mathcal{L}_2 = \mathcal{L} / \log(2)$ is the expected base-2 log likelihood.
-For large $T$, we have $W^Q_T \approx 2^{\mathcal{L}_2 T}$, and so we can interpret $1 / \mathcal{L}_2$ as the time it takes for $Q$ to double it's wealth on average over the long run.
+For large $T$, we have $W_T \approx 2^{\mathcal{L}_2 T}$, and so we can interpret $1 / \mathcal{L}_2$ as the time it takes for $Q$ to double it's wealth on average over the long run.
 
 ## Connection to Hypothesis Testing
 
@@ -182,35 +178,54 @@ $$
 Intuitively, this result states that if the random sequence $(M\_t)\_{t \geq 0}$ is memoryless and not increasing it expectation,[^martingale] then $M_t$ cannot be very large at *any moment in time*. 
 
 To see why this matters in our setting, suppose for the moment that the baseline $B$ is in fact the true data-generating distribution---i.e. $P = B$. 
-Under this assumption, the wealth process $(W\_t^Q)\_{t \geq 0}$ satisfies all the conditions placed on $(M_t)_{t \geq 0}$ in Ville's inequality.
+Under this assumption, the wealth process $(W\_t)\_{t \geq 0}$ satisfies all the conditions placed on $(M_t)_{t \geq 0}$ in Ville's inequality.
 This is easy to check:
 
 $$
-\mathbb{E}_{X_t \sim B}\!\big[ W_t^Q \mid W_0^Q \dots W_{t-1}^Q \big]
-\,=\, W_{t-1}^Q \cdot \mathbb{E}_{X_t \sim B} \left[ \frac{q(X_t)}{b(X_t)} \right]
-\,=\, W_{t-1}^Q .
+\mathbb{E}_{X_t \sim B}\!\big[ W_t \mid W_0 \dots W_{t-1} \big]
+\,=\, W_{t-1} \cdot \mathbb{E}_{X_t \sim B} \left[ \frac{q(X_t)}{b(X_t)} \right]
+\,=\, W_{t-1} .
 $$
 
 since the expectation of the likelihood ratio equals one.[^expectation-derivation]
 Ville's inequality then tells us that the probability of player $Q$'s wealth *ever* exceeding the threshold $1/\alpha$---at any round of the game---is at most $\alpha$:
 
 $$
-P\!\left( \sup_{t \geq 0} W_t^Q \, \geq \, 1/\alpha \right) \, \leq \, \alpha .
+P\!\left( \sup_{t \geq 0} W_t \, \geq \, 1/\alpha \right) \, \leq \, \alpha .
 $$
 
 This furnishes an *anytime-valid* hypothesis test of the null $H_0 : P = B$: we may reject $H_0$ at level $\alpha$ as soon as $W_t^Q$ crosses $1/\alpha$, regardless of how many rounds have been played. Unlike classical fixed-sample tests, we are free to peek at the data, stop early, or keep collecting more samples adaptively, all without inflating the type I error rate.
-
-For example, if we adopt the customary significance threshold of $\alpha = 0.05$, then Ville's inequality tells us that we can reject the null hypothesis that $P = B$ if player $Q$'s wealth ever exceeds 20.
+For example, if we use $\alpha = 0.05$ (as is customary), then we can reject the null hypothesis that $P = B$ if player $Q$'s wealth *ever* exceeds 20.
 
 
 
 ---
 
+### Further Reading
+
+Review paper by Ramdas, Grünwald, Vovk, and Shafer (2023). ["Game-Theoretic Statistics and Safe Anytime-Valid Inference."](https://doi.org/10.1214/23-STS894) *Statist. Sci.* 38 (4) 576-601. 
+
+
+Youtube Tutorial Lectures by Ramdas, "A Martingale Theory of Evidence"
+[(Part I)](https://youtu.be/U8ZOtTwUYBs?si=sGIDVAl8aeUQoXtx)
+[(Part II)](https://youtu.be/H8nviC_cDAE?si=QHnWGhYtgJ2qzVga)
+[(Part III)](https://youtu.be/LNHU4JLOnQc?si=ngPutFxWo2U67Dsw)
+
+Textbook Ramdas and Wang (2025). ["Hypothesis Testing With E-Values."](https://www.stat.cmu.edu/~aramdas/ebook-final.pdf)
+
+
 [^bits-per-spike]: Normalizing by the number of spikes in the dataset has always seemed like a weird choice to me, and I might dig into this in a future post.
+
+[^q-small]: This ensures that $Q$'s beliefs do not appreciably drive the price of contracts. If $Q$ were extremely wealthy and using all of their purchasing power to buy contracts at each round of betting, then their demands would pull the market pricing distribution closer in line to their beliefs.
+
+[^kelly]: It is also interesting to note that the player's anticipated rate of return is given by the [KL divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence). Specifically, if we replace the expectation with respect to $P$ appearing in \eqref{eq:q-wealth-growth} with an expectation with respect to $Q$, then we arrive at $\exp \Big ( D_{\mathrm{KL}}(Q \,\|\|\, B) \cdot T \Big )$. Equivalently, if the player models the world perfectly, i.e. $Q = P$, then the KL divergence from $Q$ to $B$ sets the rate of exponential wealth growth. This interpretation of KL divergence is due to JL Kelly Jr. in a [tech report from 1956](https://www.princeton.edu/~wbialek/rome/refs/kelly_56.pdf). The principle that the player should choose their bet to maximize the term in the exponent appearing in \eqref{eq:q-wealth-growth} is named after him---it is known as the [Kelly criterion](https://en.wikipedia.org/wiki/Kelly_criterion) in quantitative finance.
 
 [^martingale]: For those who appreciate jargon, we call $(M\_t)\_{t \geq 0}$ a *supermartingale* if it satisfies $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ and we call $(M\_t)\_{t \geq 0}$ a [martingale](https://en.wikipedia.org/wiki/Martingale_(probability_theory) $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] = M_{t-1}$, we call $(M_t)_{t \geq 0}$. Ville's inequality says that all nonnegative martingales and supermartingales are upper bounded 
 
 [^expectation-derivation]: Concretely, $\mathbb{E}_{X \sim B} \left[ \frac{q(X)}{b(X)} \right] = \int \frac{q(x)b(x)}{b(x)} dx =  \int q(x) dx = 1$.
 
+---
 
+## Supplementary Note 1
 
+## Supplementary Note 2

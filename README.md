@@ -38,25 +38,40 @@ git push -u origin main
 
 ### 4. (Optional) Local preview
 
-Install Jekyll and preview locally before pushing:
+The repo ships with a `Dockerfile` + `docker-compose.yml` that runs the same Jekyll/Ruby stack GitHub Pages uses in production (Ruby 3.3, `github-pages 232`, Jekyll 3.10, Liquid 4.0.4). No host install of Ruby is needed — just Docker Desktop.
+
+```bash
+# Start the preview (first run builds the image, ~2 min; subsequent runs are instant)
+docker compose up site
+
+# Open http://localhost:4000
+```
+
+Edits to `_posts/`, `_layouts/`, `_includes/`, `assets/`, etc. trigger auto-rebuild via polling, and LiveReload pushes the change to the browser on port 35729.
+
+Run in the background and free up the terminal:
+
+```bash
+docker compose up -d site      # start detached
+docker compose logs -f site    # tail the Jekyll log
+docker compose down            # stop and remove the container
+```
+
+If you change the `Gemfile`, refresh the image:
+
+```bash
+docker compose build site
+```
+
+#### Without Docker
+
+If you'd rather use a host Ruby (3.3 recommended):
 
 ```bash
 gem install bundler
 bundle install
 bundle exec jekyll serve --livereload
 # Open http://localhost:4000
-```
-
-With docker...
-
-```bash
-cd neurostatsblog.github.io
-
-docker run --rm -it \
-  -v "$PWD:/srv/jekyll" \
-  -p 4000:4000 \
-  jekyll/jekyll:4 \
-  jekyll serve --host 0.0.0.0
 ```
 
 ---
