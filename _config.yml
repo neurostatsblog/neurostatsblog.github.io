@@ -8,7 +8,7 @@ baseurl: ""
 
 author:
   name: Alex Williams
-  email: alex.h.willia@gmail.com
+  email: alex.h.williams@nyu.edu
   bio: >-
     Faculty at NYU working at the intersection of computational neuroscience,
     machine learning, and statistical inference.
@@ -34,6 +34,12 @@ plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
 
+# The github-pages gem enforces safe mode by default, which disables custom
+# files in _plugins/. We disable safe mode locally so the math-block hook
+# loads. (GitHub Pages production enforces safe mode at the server level
+# regardless of this setting, so this flag is a no-op there.)
+safe: false
+
 # Exclude from build
 exclude:
   - Gemfile
@@ -41,6 +47,9 @@ exclude:
   - README.md
   - .git
   - .gitignore
+  - Dockerfile
+  - docker-compose.yml
+  - vendor
 
 # Collections and defaults
 defaults:

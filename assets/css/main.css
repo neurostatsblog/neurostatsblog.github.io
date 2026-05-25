@@ -532,7 +532,17 @@ button { cursor: pointer; background: none; border: none; }
   line-height: 1.75;
   color: var(--color-text);
   font-weight: 300;
+  display: flex;
+  flex-direction: column;
 }
+
+.post-body > .supplementary-notes {
+  order: 1;
+  margin-top: var(--space-12);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-code-border);
+}
+.post-body > .supplementary-notes > * + * { margin-top: var(--space-5); }
 
 .post-body > * + * { margin-top: var(--space-5); }
 
@@ -567,8 +577,23 @@ button { cursor: pointer; background: none; border: none; }
   color: var(--color-text-muted);
 }
 
-.post-body p {
+.post-body p,
+.post-body li {
   max-width: 100%;
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+/* When a paragraph contains a display equation, MathJax renders the math as a
+   block-level <mjx-container display="true"> in the middle of the <p>. The
+   visual line just before it isn't HTML's last line, so text-align-last
+   doesn't fire — leaving it stretched. De-justify the whole paragraph
+   instead; the centered equation already breaks the justification rhythm. */
+.post-body p:has(mjx-container[display="true"]),
+.post-body li:has(mjx-container[display="true"]) {
+  text-align: left;
 }
 
 .post-body strong { font-weight: 600; }
@@ -594,6 +619,78 @@ button { cursor: pointer; background: none; border: none; }
 
 .post-body li { margin-top: var(--space-2); }
 .post-body li > p { max-width: none; }
+
+/* Footnotes (kramdown renders these as <div class="footnotes"><ol>…</ol></div>) */
+.post-body .footnotes {
+  margin-top: var(--space-12);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-code-border);
+  font-size: 0.9em;
+  color: var(--color-text-muted);
+}
+.post-body .footnotes::before {
+  content: "Footnotes";
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-3);
+  color: var(--color-text);
+}
+.post-body .footnotes ol {
+  max-width: 100%;
+  padding-left: var(--space-5);
+}
+.post-body .footnotes li { margin-top: var(--space-3); }
+.post-body .footnotes li > p { max-width: 100%; }
+
+/* Theorem-like callouts (theorem, lemma, proposition, definition, proof) */
+.post-body .callout {
+  margin-block: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  background: var(--color-primary-highlight);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.post-body .callout > :first-child { margin-top: 0; }
+.post-body .callout > :last-child  { margin-bottom: 0; }
+.post-body .callout p              { max-width: 100%; }
+
+/* The "Theorem (Name)." label rendered as bold inline strong — give it a touch of accent */
+.post-body .callout > p:first-child > strong:first-child {
+  color: var(--color-primary);
+}
+
+/* Variants */
+.post-body .callout-lemma {
+  border-left-color: var(--color-text-muted);
+  background: var(--color-surface-offset);
+}
+.post-body .callout-lemma > p:first-child > strong:first-child {
+  color: var(--color-text);
+}
+
+.post-body .callout-definition {
+  border-left-color: var(--color-text);
+  background: var(--color-surface-offset);
+}
+.post-body .callout-definition > p:first-child > strong:first-child {
+  color: var(--color-text);
+}
+
+.post-body .callout-proof {
+  background: transparent;
+  border-left-color: var(--color-border);
+  font-size: 0.95em;
+  color: var(--color-text-muted);
+}
+.post-body .callout-proof > p:first-child > strong:first-child {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
 
 /* Blockquote */
 .post-body blockquote {

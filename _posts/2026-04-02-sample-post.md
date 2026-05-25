@@ -4,7 +4,10 @@ title: "Sample Blog Post"
 subtitle: "This is just a test. Please pardon us while we're under construction."
 date: 2026-04-02
 tags: [Gaussian processes, neural decoding, Bayesian inference]
-authors: ["Alex Williams"]
+authors:
+  - name: Alex Williams
+    affiliation: New York University
+    email: alex.h.williams@nyu.edu
 reviewers: ["Jane Doe"]
 ---
 
