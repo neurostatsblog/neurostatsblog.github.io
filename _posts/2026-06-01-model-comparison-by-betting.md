@@ -2,7 +2,7 @@
 layout: post
 title: "Betting games for model comparison"
 subtitle: "A simple way to interpret heldout log-likelihood scores"
-date: 2026-04-02
+date: 2026-06-01
 tags: [statistics]
 authors:
   - name: Alex Williams
