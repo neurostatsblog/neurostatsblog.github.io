@@ -91,9 +91,7 @@ $$
 \pi(C) = \mathbb{E}_{X \sim B} \, \big [ \,  C(X) \, \big ] . \label{eq:general-pricing-constraint}
 \end{equation}
 $$
-See [**Supplementary Note 1**](#supplementary-note-1) for a quick derivation on why efficient market pricing leads to \eqref{eq:general-pricing-constraint}.
-
-## Simplifying the price structure
+See [**Supplementary Note 1**](#supplementary-note-1) for a quick derivation of this equation.
 
 The pricing constraint in equation \eqref{eq:general-pricing-constraint} allows us to simplify the structure of the game by assuming that the contracts have unit price.
 Indeed, for any contract $C(\cdot)$, we can define a new contract $S(x) = C(x)/\pi(C)$ which has unit price, $\pi(S) = 1$.
@@ -103,17 +101,23 @@ $$
 $$
 by the definition of $S$.
 Therefore, for the rest of this post we will focus on the simplified wealth process
-$$
-\begin{align}
-W_t &=  W_{t-1} \cdot S( X_{t} ) \label{eq:wealth-process}
-\end{align}
-$$
-which is subject to the constraints that $S(x) > 0$ and
+
+<div class="callout callout-theorem">
+<p><strong>Simplified wealth process.</strong> 
+Assuming that the player purchases nonnegative contracts $S(x) \geq 0$ of unit price, 
 $$
 \begin{align}
 \mathbb{E}_{X \sim B} \big [ \, S(X) \, \big ] = 1 \label{eq:unit-price-constraint}
 \end{align}
 $$
+then the player's wealth evolves according to
+$$
+\begin{align}
+W_t &=  W_{t-1} \cdot S( X_{t} ) . \label{eq:wealth-process}
+\end{align}
+$$
+</p>
+</div>
 
 ## Choosing the optimal contract function
 
@@ -227,7 +231,8 @@ Textbook Ramdas and Wang (2025). ["Hypothesis Testing With E-Values."](https://w
 
 [^kelly]: It is also interesting to note that the player's anticipated rate of return is given by the [KL divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence). Specifically, if we replace the expectation with respect to $P$ appearing in \eqref{eq:q-wealth-growth} with an expectation with respect to $Q$, then we arrive at $\exp \Big ( D_{\mathrm{KL}}(Q \,\Vert\, B) \cdot T \Big )$. Equivalently, if the player models the world perfectly, i.e. $Q = P$, then the KL divergence from $Q$ to $B$ sets the rate of exponential wealth growth. This interpretation of KL divergence is due to JL Kelly Jr. in a [tech report from 1956](https://www.princeton.edu/~wbialek/rome/refs/kelly_56.pdf). The principle that the player should choose their bet to maximize the term in the exponent appearing in \eqref{eq:q-wealth-growth} is named after him---it is known as the [Kelly criterion](https://en.wikipedia.org/wiki/Kelly_criterion) in quantitative finance.
 
-[^martingale]: For those who appreciate jargon, we call $(M\_t)\_{t \geq 0}$ a *supermartingale* if it satisfies $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ and we call $(M\_t)\_{t \geq 0}$ a [martingale](https://en.wikipedia.org/wiki/Martingale_(probability_theory) $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] = M_{t-1}$, we call $(M_t)_{t \geq 0}$. Ville's inequality says that all nonnegative martingales and supermartingales are upper bounded 
+[^martingale]: For those who appreciate jargon, we call $(M\_t)\_{t \geq 0}$ a *supermartingale* if it satisfies $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ and we call $(M\_t)\_{t \geq 0}$.
+In the stricter case where the inequality is saturated, i.e. $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] = M_{t-1}$, we call $(M\_t)\_{t \geq 0}$ a [*martingale*](https://en.wikipedia.org/wiki/Martingale_(probability_theory)). Ville's inequality says that all nonnegative supermartingales (and martingales) are upper bounded for all time with high probability.
 
 [^expectation-derivation]: Concretely, $\mathbb{E}_{X \sim B} \left[ \frac{q(X)}{b(X)} \right] = \int \frac{q(x)b(x)}{b(x)} dx =  \int q(x) dx = 1$.
 
