@@ -586,6 +586,16 @@ button { cursor: pointer; background: none; border: none; }
   -webkit-hyphens: auto;
 }
 
+/* When a paragraph contains a display equation, MathJax renders the math as a
+   block-level <mjx-container display="true"> in the middle of the <p>. The
+   visual line just before it isn't HTML's last line, so text-align-last
+   doesn't fire — leaving it stretched. De-justify the whole paragraph
+   instead; the centered equation already breaks the justification rhythm. */
+.post-body p:has(mjx-container[display="true"]),
+.post-body li:has(mjx-container[display="true"]) {
+  text-align: left;
+}
+
 .post-body strong { font-weight: 600; }
 .post-body em { font-style: italic; }
 

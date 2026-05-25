@@ -30,15 +30,18 @@ git push -u origin main
 
 ### 3. Enable GitHub Pages
 
+The site is built and deployed by GitHub Actions (see `.github/workflows/jekyll.yml`) rather than the built-in "Deploy from a branch" path. We need Actions because the site uses a custom `_plugins/` hook (for display-math blank-line normalization) which GitHub Pages' built-in builder refuses to load — it runs Jekyll in safe mode.
+
 1. Go to the repository → **Settings** → **Pages**
-2. Under **Source**, select `Deploy from a branch`
-3. Choose branch: `main`, folder: `/ (root)`
-4. Click **Save**
-5. After 1–2 minutes, your site is live at `https://neurostatsblog.github.io`
+2. Under **Source**, select **GitHub Actions** (NOT "Deploy from a branch")
+3. Push to `main`. The `Build and deploy Jekyll site` workflow will run on every push.
+4. After 1–2 minutes, your site is live at `https://neurostatsblog.github.io`. You can monitor builds at the repo's **Actions** tab.
+
+You can also manually re-run the deploy from the Actions tab via the **Run workflow** button (the workflow has `workflow_dispatch:` enabled).
 
 ### 4. (Optional) Local preview
 
-The repo ships with a `Dockerfile` + `docker-compose.yml` that runs the same Jekyll/Ruby stack GitHub Pages uses in production (Ruby 3.3, `github-pages 232`, Jekyll 3.10, Liquid 4.0.4). No host install of Ruby is needed — just Docker Desktop.
+The repo ships with a `Dockerfile` + `docker-compose.yml` that runs Jekyll 3.10 on Ruby 3.3 — the same versions GitHub Pages uses. No host install of Ruby is needed — just Docker Desktop.
 
 ```bash
 # Start the preview (first run builds the image, ~2 min; subsequent runs are instant)

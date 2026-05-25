@@ -36,22 +36,18 @@ Intuitively, this allows us to compute *likelihood ratios*, $q(X)/b(X)$, without
 This also assures us that log-likelihoods, $\log q(X)$ and $\log b(X)$, are always finite.
 
 Given an infinite amount of heldout data, our ideal measure of performance (at least for the purposes of this post) is the expected log-likelihood ratio:
-
 $$
 \begin{equation}
 \mathcal{L} = \mathbb{E}_{X \sim P} \Big [ \log q(X)/ b(X) \Big ] = \mathbb{E}_{X \sim P} \Big [ \log q(X) - \log b(X) \Big ] 
 \label{eq:expected-log-likelihood-ratio}
 \end{equation}
 $$
-
 Note that the expectation is computed under $P$. 
 Since $P$ is unknown in real world situations, we can estimate the expression above by holding out a test set with $T$ data samples and approximating the expectation with an empirical average:
-
 $$
 \mathcal{L} \approx \widehat{\mathcal{L}} = \frac{1}{T} \sum_{t=1}^T \log q(X_t)/ b(X_t)  = \frac{1}{T} \sum_{t=1}^T \Big [ \log q(X) - \log b(X) \Big ] 
 \label{eq:empirical-log-likelihood-ratio}
 $$
-
 It is worth remarking that this entire post will not deal with the training process---i.e. how does one find $Q$?
 This typically involves optimizing parameters, so one may elsewhere see the liklihood expressed as something like $q (x \mid \theta)$ where $\theta$ denotes trainable parameters.
 However, we don't need to refer to $\theta$ at all for the purposes of this post so we simply write $q(x)$ in place of $q (x \mid \theta)$.
@@ -68,21 +64,17 @@ One way to approach this is to imagine model $Q$ as a "player" in a betting game
 The bets made by the player are set by the "market" which operates according to the baseline model $B$.
 
 The game starts by giving player $Q$ one unit of wealth:
-
 $$
 W_0 = 1
 $$
-
 At each round of the game, player $Q$ uses all of their wealth to purchase *prediction contracts*, specified by a function $C(x) > 0$.
 The player then recieves a random sequence of returns $C(X_t), C(X_2), C(X_3), \dots$ over discrete rounds of the game.
 The wealth updates according to:
-
 $$
 \begin{align}
 W_t &= \big ( \, W_{t-1} / \pi(C) \, \big ) \cdot C( X_{t} ) . \label{eq:wealth-process-verbose}
 \end{align}
 $$
-
 where $\pi(S)$ denotes the *price* of the contract.
 
 Equation \eqref{eq:wealth-process-verbose} is simple.
@@ -94,13 +86,11 @@ Intuitively, the price of a contract is set by what people are willing to buy an
 For the purposes of our game we'll assume that the market consensus---or the ["wisdom of the crowd"](https://en.wikipedia.org/wiki/Wisdom_of_the_crowd)---coincides with the baseline model $B$.
 Formally, it turns out that the fair price of a contract is given by its expected value under the market consensus distribution.
 That is,
-
 $$
 \begin{equation}
 \pi(C) = \mathbb{E}_{X \sim B} \, \big [ \,  C(X) \, \big ] . \label{eq:general-pricing-constraint}
 \end{equation}
 $$
-
 See [**Supplementary Note 1**](#supplementary-note-1) for a quick derivation on why efficient market pricing leads to \eqref{eq:general-pricing-constraint}.
 
 ## Simplifying the price structure
@@ -108,22 +98,17 @@ See [**Supplementary Note 1**](#supplementary-note-1) for a quick derivation on 
 The pricing constraint in equation \eqref{eq:general-pricing-constraint} allows us to simplify the structure of the game by assuming that the contracts have unit price.
 Indeed, for any contract $C(\cdot)$, we can define a new contract $S(x) = C(x)/\pi(C)$ which has unit price, $\pi(S) = 1$.
 The wealth update for $C$ and $S$ is equivalent since
-
 $$
 \big ( \, W_{t-1} / \pi(C) \, \big ) \cdot C( X_{t} ) = W_{t-1} \cdot S(X_t),
 $$
-
 by the definition of $S$.
 Therefore, for the rest of this post we will focus on the simplified wealth process
-
 $$
 \begin{align}
 W_t &=  W_{t-1} \cdot S( X_{t} ) \label{eq:wealth-process}
 \end{align}
 $$
-
 which is subject to the constraints that $S(x) > 0$ and
-
 $$
 \begin{align}
 \mathbb{E}_{X \sim B} \big [ \, S(X) \, \big ] = 1 \label{eq:unit-price-constraint}
@@ -136,7 +121,6 @@ Player $Q$ is allowed to choose the function $S(\cdot)$ however they like, so lo
 Out of this space of feasible contracts, which one should $Q$ choose to play?
 
 After $T$ rounds of betting according to equation \eqref{eq:wealth-process}, the player will accumulate
-
 $$
 \begin{align}
 W_T = \prod_{t=1}^T S( X_{t} ) 
@@ -147,45 +131,37 @@ W_T = \prod_{t=1}^T S( X_{t} )
       \label{eq:q-wealth-growth}
 \end{align}
 $$
-
 units of wealth.
 The approximation in the final line comes from replacing the empirical expectation $\tfrac{1}{T} \sum_{t=1}^T \log S(X_t)$ with the true expected value under $P$.
 
 Since the player believes that $P = Q$, they anticipate that their wealth can grow exponentially over time according to:
-
 $$
 \begin{equation}
 W_T \approx \exp \Big ( T \cdot \mathbb{E}_{X \sim Q} \log S(X) \Big )
 \end{equation}
 $$
-
 To maximize their rate of wealth growth, a reasonable strategy is to choose $S(\cdot)$ in order to
-
 $$
 \begin{align}
 \text{maximize} ~~ \mathbb{E}_{X \sim Q} \log S(X) \quad \text{subject to } \eqref{eq:unit-price-constraint} 
-\end{align}
 \label{eq:kelly-criterion}
+\end{align}
 $$
 
 Quite pleasingly, as shown in [**Supplemental Note 2**](#supplementary-note-2), the solution to this optimization problem turns out to be the likelihood ratio!
-
 $$
 \begin{equation}
 S(x) = \frac{q(x)}{b(x)}
 \label{eq:betting-function-equals-likelihood-ratio}
 \end{equation}
 $$
-
 Combining equations \eqref{eq:betting-function-equals-likelihood-ratio} and \eqref{eq:q-wealth-growth} with the definition of $\mathcal{L}$ in \eqref{eq:expected-log-likelihood-ratio}, we see that the long-run wealth of the player is approximated by
-
 $$
 \begin{equation}
 W_T \approx \exp \Big ( \mathcal{L} \cdot T \Big )
 \label{eq:player-q-long-term-wealth}
 \end{equation}
 $$
-
 for large $T$.
 In other words, the wealth accumulated player $Q$ in the game will, over the long run, grow or decay exponentially fast at a rate given by the expected log-likelihood ratio.[^kelly]
 
@@ -217,20 +193,16 @@ Intuitively, this result states that if the random sequence $(M\_t)\_{t \geq 0}$
 To see why this matters in our setting, suppose for the moment that the baseline $B$ is in fact the true data-generating distribution---i.e. $P = B$. 
 Under this assumption, the wealth process $(W\_t)\_{t \geq 0}$ satisfies all the conditions placed on $(M_t)_{t \geq 0}$ in Ville's inequality.
 This is easy to check:
-
 $$
 \mathbb{E}_{X_t \sim B}\!\big[ W_t \mid W_0 \dots W_{t-1} \big]
 \,=\, W_{t-1} \cdot \mathbb{E}_{X_t \sim B} \left[ \frac{q(X_t)}{b(X_t)} \right]
 \,=\, W_{t-1} .
 $$
-
 since the expectation of the likelihood ratio equals one.[^expectation-derivation]
 Ville's inequality then tells us that the probability of player $Q$'s wealth *ever* exceeding the threshold $1/\alpha$---at any round of the game---is at most $\alpha$:
-
 $$
 P\!\left( \sup_{t \geq 0} W_t \, \geq \, 1/\alpha \right) \, \leq \, \alpha .
 $$
-
 This furnishes an *anytime-valid* hypothesis test of the null $H_0 : P = B$: we may reject $H_0$ at level $\alpha$ as soon as $W_t^Q$ crosses $1/\alpha$, regardless of how many rounds have been played. Unlike classical fixed-sample tests, we are free to peek at the data, stop early, or keep collecting more samples adaptively, all without inflating the type I error rate.
 For example, if we use $\alpha = 0.05$ (as is customary), then we can reject the null hypothesis that $P = B$ if player $Q$'s wealth *ever* exceeds 20.
 
@@ -253,7 +225,7 @@ Textbook Ramdas and Wang (2025). ["Hypothesis Testing With E-Values."](https://w
 
 [^q-small]: This ensures that $Q$'s beliefs do not appreciably drive the price of contracts. If $Q$ were extremely wealthy and using all of their purchasing power to buy contracts at each round of betting, then their demands would pull the market pricing distribution closer in line to their beliefs.
 
-[^kelly]: It is also interesting to note that the player's anticipated rate of return is given by the [KL divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence). Specifically, if we replace the expectation with respect to $P$ appearing in \eqref{eq:q-wealth-growth} with an expectation with respect to $Q$, then we arrive at $\exp \Big ( D_{\mathrm{KL}}(Q \,\|\|\, B) \cdot T \Big )$. Equivalently, if the player models the world perfectly, i.e. $Q = P$, then the KL divergence from $Q$ to $B$ sets the rate of exponential wealth growth. This interpretation of KL divergence is due to JL Kelly Jr. in a [tech report from 1956](https://www.princeton.edu/~wbialek/rome/refs/kelly_56.pdf). The principle that the player should choose their bet to maximize the term in the exponent appearing in \eqref{eq:q-wealth-growth} is named after him---it is known as the [Kelly criterion](https://en.wikipedia.org/wiki/Kelly_criterion) in quantitative finance.
+[^kelly]: It is also interesting to note that the player's anticipated rate of return is given by the [KL divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence). Specifically, if we replace the expectation with respect to $P$ appearing in \eqref{eq:q-wealth-growth} with an expectation with respect to $Q$, then we arrive at $\exp \Big ( D_{\mathrm{KL}}(Q \,\Vert\, B) \cdot T \Big )$. Equivalently, if the player models the world perfectly, i.e. $Q = P$, then the KL divergence from $Q$ to $B$ sets the rate of exponential wealth growth. This interpretation of KL divergence is due to JL Kelly Jr. in a [tech report from 1956](https://www.princeton.edu/~wbialek/rome/refs/kelly_56.pdf). The principle that the player should choose their bet to maximize the term in the exponent appearing in \eqref{eq:q-wealth-growth} is named after him---it is known as the [Kelly criterion](https://en.wikipedia.org/wiki/Kelly_criterion) in quantitative finance.
 
 [^martingale]: For those who appreciate jargon, we call $(M\_t)\_{t \geq 0}$ a *supermartingale* if it satisfies $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ and we call $(M\_t)\_{t \geq 0}$ a [martingale](https://en.wikipedia.org/wiki/Martingale_(probability_theory) $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] = M_{t-1}$, we call $(M_t)_{t \geq 0}$. Ville's inequality says that all nonnegative martingales and supermartingales are upper bounded 
 
@@ -269,24 +241,19 @@ That is, $X \in \\{1, \dots, n\\}$ almost surely.
 The same argument can be extended to continuous-valued random variables with sufficient care.
 
 By assuming there are only $n$ discrete outcomes, then we can express any potential contract function $C(\cdot)$ as a finite linear combination of elementary basis functions:
-
 $$
 \begin{equation}
 C(x) = \sum_{i=1}^n r_i \delta_i(x)
 \label{eq:contract-decomposition}
 \end{equation}
 $$
-
 where $r_1, \dots, r_n$ are scalar coefficients denoting the return of outcome $x = i$,
-
 $$
 \begin{equation}
 r_i = C(i) ~,
 \end{equation}
 $$
-
 and $\delta_1, \dots, \delta_n$ are contracts that pays off one unit of wealth if the outcome is $x = i$,
-
 $$
 \delta_i(x) = \begin{cases}
 1 & x = i \\
@@ -314,14 +281,12 @@ Conversely, if $\pi(S_1 + S_2) < \pi(S_1) + \pi(S_2)$ then run the same trade in
 
 Taken together, we conclude that pricing must be linear.
 Applying this to \eqref{eq:contract-decomposition} we can conclude that the price of any contract can be written down as:
-
 $$
 \begin{equation}
 \pi(S) = \sum_{i=1}^n r_i \pi(\delta_i)
 \label{eq:contract-price-decomposition}
 \end{equation}
 $$
-
 Thus, we can determine the price of any contract by determing the prices of the elementary basis contracts $\delta_1, \dots, \delta_n$.
 
 **Observation 2 -- the prices $\pi(\delta_1), \dots, \pi(\delta_n)$ are nonnegative and sum to one.**
@@ -337,13 +302,37 @@ Likewise, if the price were greater than one, a player would get free money by s
 **Putting it together.** From observation 2, it is clear that the prices $\pi(\delta_1), \dots, \pi(\delta_n)$ define a probability measure over outcomes $x \in \{ 1, \dots, n \}$.
 Call this probability measure $B$.
 Then, recalling that $r_i = S(i)$ denotes the return of outcome $x = i$ under the contract, we deduce from equation \eqref{eq:contract-price-decomposition}:
-
 $$
 \pi(S) = \sum_{i=1}^n r_i \pi(\delta_i) = \mathbb{E}_{X \sim B}  \left [ S(X) \right ]
 $$
-
 confirming our claim that the price of a contract is given by the expected payoff of the contract under an appropriate distribution $B$.
 
 ## Supplementary Note 2
+
+We prove that the optimization problem stated in \eqref{eq:kelly-criterion} is solved by the likelihood ratio $S^\star(x) = q(x)/b(x)$ given in \eqref{eq:betting-function-equals-likelihood-ratio}.
+
+The argument relies on a useful reparameterization. 
+Let $r(x) = b(x) \, S(x)$ and note that $r(x)$ is a probability density.
+Indeed, $r(x) \geq 0$ since both $b$ and $S$ are nonnegative, and
+$$
+\int r(x) \, dx \,=\, \int b(x) \, S(x) \, dx \,=\, \mathbb{E}_{X \sim B} [ S(X) ] \,=\, \pi(S) \, = \, 1
+$$
+by the unit-price constraint \eqref{eq:unit-price-constraint}. 
+Conversely, since we assumed $b(x) > 0$ everywhere on the support of $P$, any probability density $r$ defines a feasible contract function via $S(x) = r(x)/b(x)$.
+
+Now substitute $S(x) = r(x)/b(x)$ into the objective in \eqref{eq:kelly-criterion}, then add and subtract $\mathbb{E}_{X \sim Q} \log q(X)$:
+$$
+\begin{align}
+\mathbb{E}_{X \sim Q} \log S(X)
+  &\,=\, \mathbb{E}_{X \sim Q} \log \frac{r(X)}{b(X)} \\
+  &\,=\, \mathbb{E}_{X \sim Q} \log \frac{q(X)}{b(X)} \,-\, \mathbb{E}_{X \sim Q} \log \frac{q(X)}{r(X)} \\
+  &\,=\, D_{\mathrm{KL}}(Q \,\Vert\, B) \,-\, D_{\mathrm{KL}}(Q \,\Vert\, R) .
+\end{align}
+$$
+The first term, $D_{\mathrm{KL}}(Q \,\Vert\, B)$, does not depend on the player's choice of contract. The second term, $D_{\mathrm{KL}}(Q \,\Vert\, R)$, is non-negative by [Gibbs' inequality](https://en.wikipedia.org/wiki/Gibbs%27_inequality), with equality if and only if $R = Q$. To maximize the objective, the player should therefore choose $R = Q$, that is, $r(x) = q(x)$. Translating back to a contract function via $S = r/b$ yields
+$$
+S^\star(x) \,=\, \frac{q(x)}{b(x)},
+$$
+as claimed in \eqref{eq:betting-function-equals-likelihood-ratio}. The maximum achievable value of the objective is $D_{\mathrm{KL}}(Q \,\Vert\, B)$ --- the exponential rate at which the player anticipates their wealth will grow, recovering the Kelly-criterion interpretation discussed in the footnote at the end of "Choosing the optimal contract function."
 
 </div>
