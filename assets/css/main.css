@@ -542,6 +542,7 @@ button { cursor: pointer; background: none; border: none; }
   padding-top: var(--space-6);
   border-top: 1px solid var(--color-code-border);
 }
+.post-body > .supplementary-notes > * + * { margin-top: var(--space-5); }
 
 .post-body > * + * { margin-top: var(--space-5); }
 

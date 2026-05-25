@@ -70,44 +70,69 @@ $$
 W_0 = 1
 $$
 
-We use $W_t$ denote the player's wealth after playing $t$ rounds of the game.
-After each round, the wealth is updated according to a *betting function* or *contract* $S(x) > 0$ as follows:
+At each round of the game, player $Q$ uses all of their wealth to purchase *prediction contracts*, specified by a function $C(x) > 0$.
+The player then recieves a random sequence of returns $C(X_t), C(X_2), C(X_3), \dots$ over discrete rounds of the game.
+The wealth updates according to:
 
 $$
 \begin{align}
-W_t &= W_{t-1} \cdot S( X_{t} ) . \label{eq:wealth-process}
+W_t &= \big ( \, W_{t-1} / \pi(C) \, \big ) \cdot C( X_{t} ) . \label{eq:wealth-process-verbose}
 \end{align}
 $$
 
-To play the game, $Q$ needs to pay a price to buy the contract *S* on the free market.
-There is a very basic argument that the fair price is given by the expected value of the contract's payoff under the *average beliefs* of all market participants (see [**Supplementary Note 1**](#supplementary-note-1)).
-Here we will assume that player $Q$ only represents a very small part of the market,[^q-small] and that the market's beliefs are reflected by the baseline model $B$.
+where $\pi(S)$ denotes the *price* of the contract.
 
-Under these assumptions it can be shown (see [**Supplementary Note 1**](#supplementary-note-1)) that a contract $S$ sold for price $p$ must satisfy the constraint that:
+Equation \eqref{eq:wealth-process-verbose} is simple.
+The first term, $W_{t-1} / \pi(C)$, is the number of contracts purchased using the wealth from the previous round.
+This is multiplied by the contract's payoff $C(X_t)$ where $X_t$ is the randomly sampled datapoint at round $t$.
+Note that we allow the wealth and the number of purchased contracts to be infinitely divisible into fractions.
 
-$$
-\begin{equation}
-\mathbb{E}_{X \sim B} \, \big [ \, p \cdot S(X) \, \big ] \leq p . \label{eq:pricing-constraint-verbose}
-\end{equation}
-$$
-
-which is obviously equivalent to the constraint that:
+Intuitively, the price of a contract is set by what people are willing to buy and sell it for, which reflects their expectations about the underlying distribution $P$.
+For the purposes of our game we'll assume that the market consensus---or the ["wisdom of the crowd"](https://en.wikipedia.org/wiki/Wisdom_of_the_crowd)---coincides with the baseline model $B$.
+Formally, it turns out that the fair price of a contract is given by its expected value under the market consensus distribution.
+That is,
 
 $$
 \begin{equation}
-\mathbb{E}_{X \sim B} \, \big [ \, S(X) \, \big ] \leq 1 . \label{eq:pricing-constraint}
+\pi(C) = \mathbb{E}_{X \sim B} \, \big [ \,  C(X) \, \big ] . \label{eq:general-pricing-constraint}
 \end{equation}
 $$
 
-Under this pricing constraint, there is a very straightforward interpretation of the wealth update equation, given by \eqref{eq:wealth-process}.
-At each round of betting, the player has $W_t$ units of wealth to purchase contracts on the free market.
-We assume they bet everything---i.e. they purchase a contract with at price $p = W_t$ whose payoff is equal to $p \cdot S(X)$.
-Thus, at the next round of betting the player will have $W_{t+1} = p \cdot S(X_t) = W_t \cdot S(X_t)$ units of wealth.
+See [**Supplementary Note 1**](#supplementary-note-1) for a quick derivation on why efficient market pricing leads to \eqref{eq:general-pricing-constraint}.
+
+## Simplifying the price structure
+
+The pricing constraint in equation \eqref{eq:general-pricing-constraint} allows us to simplify the structure of the game by assuming that the contracts have unit price.
+Indeed, for any contract $C(\cdot)$, we can define a new contract $S(x) = C(x)/\pi(C)$ which has unit price, $\pi(S) = 1$.
+The wealth update for $C$ and $S$ is equivalent since
+
+$$
+\big ( \, W_{t-1} / \pi(C) \, \big ) \cdot C( X_{t} ) = W_{t-1} \cdot S(X_t),
+$$
+
+by the definition of $S$.
+Therefore, for the rest of this post we will focus on the simplified wealth process
+
+$$
+\begin{align}
+W_t &=  W_{t-1} \cdot S( X_{t} ) \label{eq:wealth-process}
+\end{align}
+$$
+
+which is subject to the constraints that $S(x) > 0$ and
+
+$$
+\begin{align}
+\mathbb{E}_{X \sim B} \big [ \, S(X) \, \big ] = 1 \label{eq:unit-price-constraint}
+\end{align}
+$$
 
 ## Choosing the optimal contract function
 
-Out of all the feasible contract functions that satisfy this constraint, what should $Q$ choose to play?
-Over a very large number of betting rounds, say $T$, the player will accumulate
+Player $Q$ is allowed to choose the function $S(\cdot)$ however they like, so long as it satisfies \eqref{eq:unit-price-constraint}.
+Out of this space of feasible contracts, which one should $Q$ choose to play?
+
+After $T$ rounds of betting according to equation \eqref{eq:wealth-process}, the player will accumulate
 
 $$
 \begin{align}
@@ -123,10 +148,20 @@ $$
 units of wealth.
 The approximation in the final line comes from replacing the empirical expectation $\tfrac{1}{T} \sum_{t=1}^T \log S(X_t)$ with the true expected value under $P$.
 
-Since the player believes that $P = Q$, they anticipate to maximize their exponential rate of wealth growth under \eqref{eq:q-wealth-growth} by choosing $S(\cdot)$ in order to
+Since the player believes that $P = Q$, they anticipate that their wealth can grow exponentially over time according to:
 
 $$
-\text{maximize} ~~ \mathbb{E}_{X \sim Q} \log S(X) \quad \text{subject to} ~ \eqref{eq:pricing-constraint}.
+\begin{equation}
+W_T \approx \exp \Big ( T \cdot \mathbb{E}_{X \sim Q} \log S(X) \Big )
+\end{equation}
+$$
+
+To maximize their rate of wealth growth, a reasonable strategy is to choose $S(\cdot)$ in order to
+
+$$
+\begin{align}
+\text{maximize} ~~ \mathbb{E}_{X \sim Q} \log S(X) \quad \text{subject to } \eqref{eq:unit-price-constraint} 
+\end{align}
 \label{eq:kelly-criterion}
 $$
 
@@ -225,25 +260,38 @@ Textbook Ramdas and Wang (2025). ["Hypothesis Testing With E-Values."](https://w
 
 ## Supplementary Note 1
 
-Here we sketch how the market price constraint \eqref{eq:pricing-constraint} arises in more detail.
+Here we sketch how the market price constraint \eqref{eq:general-pricing-constraint} arises in more detail.
 For simplicity, let's consider a case where the random outcomes $X \sim P$ take on one of $n$ discrete values.
 That is, $X \in \\{1, \dots, n\\}$ almost surely.
 The same argument can be extended to continuous-valued random variables with sufficient care.
 
-By assuming there are only $n$ discrete outcomes, then we can express any potential contract function $S(\cdot)$ as a linear combination of elementary basis functions:
+By assuming there are only $n$ discrete outcomes, then we can express any potential contract function $S(\cdot)$ as a finite linear combination of elementary basis functions:
 
 $$
-S(X) = u_1 \delta_1(X) + \dots + u_n \delta_n(X)
+\begin{equation}
+S(x) = \sum_{i=1}^n r_i \delta_i(x)
+\label{eq:contract-decomposition}
+\end{equation}
 $$
 
-where $u_1, \dots, u_n$ are scalar coefficients and
+where $r_1, \dots, r_n$ are scalar coefficients denoting the return of outcome $x = i$,
+
+$$
+\begin{equation}
+r_i = S(i) ~,
+\end{equation}
+$$
+
+and $\delta_1, \dots, \delta_n$ are contracts that pays off one unit of wealth if the outcome is $x = i$,
 
 $$
 \delta_i(x) = \begin{cases}
 1 & x = i \\
 0 & x \neq i
-\end{cases}.
+\end{cases} ~ .
 $$
+
+
 
 Let $\pi(S)$ denote the price of a contract function $S$. 
 Our goal will be to show that:
@@ -254,9 +302,52 @@ $$
 
 for an appropriate choice of distribution $B$.
 We will show that this is true if the market is organized such that no player can recieve "free money" without taking any risk (in other words, there are no [arbitrage](https://en.wikipedia.org/wiki/Arbitrage) opportunities).
+We assume that any player can either buy or sell contracts, and that [fractional contracts](https://en.wikipedia.org/wiki/Fractional_ownership) are supported in the market (e.g. by sharing contracts with other players).
 
-**The pricing function $\pi$ must be linear.** For any scalar $c$ we have we must have $\pi(c \cdot S) = c \pi(S)$. Otherwise, 
 
+**Observation 1 -- The pricing function $\pi$ must be linear.** For any scalar $c>0$ we have we must have $\pi(c \cdot S) = c \pi(S)$.
+If $\pi(c \cdot S) > c \cdot \pi(S)$ a player would get free money by selling the contract $c \cdot S$ and simultaneously buying $c$ contracts of $S$.
+For any outcome $X \sim P$, the player neither gains nor losses any wealth and they pocket $\pi(c \cdot S) - c \cdot \pi(S) > 0$ units of wealth.
+Conversely, if $\pi(c \cdot S) < c \cdot \pi(S)$ a player would get free money by buying the contract $c \cdot S$ and simultaneously selling $c$ contracts of $S$.
+Thus, we must have that $\pi(c \cdot S) = c \cdot \pi(S)$.
+
+Next, for any two contracts $S_1$ and $S_2$ we must have that $\pi(S_1 + S_2) = \pi(S_1) + \pi(S_2)$.
+The argument is quite similar to above.
+If $\pi(S_1 + S_2) > \pi(S_1) + \pi(S_2)$ then a player would get free money by selling the contract $S_3(x) = S_1(x) + S_2(x)$ and simultaneously buying $S_1$ and $S_2$.
+Since $S_1(x) + S_2(x) - S_3(x) = 0$ for all $x$, the play  neither gains nor losses any wealth based on the random outcome and they pocket $\pi(S_3) - \pi(S_1 + S_2) > 0$ units of wealth.
+Conversely, if $\pi(S_1 + S_2) < \pi(S_1) + \pi(S_2)$ then run the same trade in reverse to get free money.
+
+Taken together, we conclude that pricing must be linear.
+Applying this to \eqref{eq:contract-decomposition} we can conclude that the price of any contract can be written down as:
+
+$$
+\begin{equation}
+\pi(S) = \sum_{i=1}^n r_i \pi(\delta_i)
+\label{eq:contract-price-decomposition}
+\end{equation}
+$$
+
+Thus, we can determine the price of any contract by determing the prices of the elementary basis contracts $\delta_1, \dots, \delta_n$.
+
+**Observation 2 -- the prices $\pi(\delta_1), \dots, \pi(\delta_n)$ are nonnegative and sum to one.**
+First we prove nonnegativity.
+The random payout for each contract, $\delta_i(X)$ for $X \sim P$, is greater than or equal to zero almost surely.
+Thus, the price of each contract must be nonnegative---if it were negative, it would imply that the player is *paid* to accept a contract that never results in a loss (i.e. recieve free money).
+
+Next we prove the normalization condition that $\sum_i \pi(\delta_i) = 1$.
+Note that we can construct a contract with constant payoff $S(X) = 1$, almost surely, by setting $r_1 = r_2 = \dots = r_n = 1$ in equation \eqref{eq:contract-decomposition}.
+If the price of this contract were less than one, a player would get free money by purchasing it.
+Likewise, if the price were greater than one, a player would get free money by selling it.
+
+**Putting it together.** From observation 2, it is clear that the prices $\pi(\delta_1), \dots, \pi(\delta_n)$ define a probability measure over outcomes $x \in \{ 1, \dots, n \}$.
+Call this probability measure $B$.
+Then, recalling that $r_i = S(i)$ denotes the return of outcome $x = i$ under the contract, we deduce from equation \eqref{eq:contract-price-decomposition}:
+
+$$
+\pi(S) = \sum_{i=1}^n r_i \pi(\delta_i) = \mathbb{E}_{X \sim B}  \left [ S(X) \right ]
+$$
+
+confirming our claim that the price of a contract is given by the expected payoff of the contract under an appropriate distribution $B$.
 
 ## Supplementary Note 2
 

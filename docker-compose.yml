@@ -11,6 +11,7 @@ services:
 
   pdf:
     image: pandoc/extra:3.1
+    platform: linux/amd64
     entrypoint: ["/bin/sh", "-c"]
     working_dir: /data
     volumes:

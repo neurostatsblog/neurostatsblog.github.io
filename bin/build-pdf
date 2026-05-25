@@ -43,6 +43,7 @@ build_one() {
     --pdf-engine=pdflatex \
     --standalone \
     --template=/data/pdf/template.tex \
+    --lua-filter=/data/pdf/unwrap-ams.lua \
     --output=/data/pdfs/${slug}.pdf \
     /data/${input_path}"
 }
