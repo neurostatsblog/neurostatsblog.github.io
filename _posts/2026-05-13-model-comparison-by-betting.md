@@ -4,7 +4,10 @@ title: "Betting games for model comparison"
 subtitle: "A simple way to interpret heldout log-likelihood scores"
 date: 2026-04-02
 tags: [statistics]
-authors: ["Alex Williams"]
+authors:
+  - name: Alex Williams
+    affiliation: New York University
+    email: alex.h.williams@nyu.edu
 reviewers: ["n/a"]
 ---
 
@@ -265,11 +268,11 @@ For simplicity, let's consider a case where the random outcomes $X \sim P$ take 
 That is, $X \in \\{1, \dots, n\\}$ almost surely.
 The same argument can be extended to continuous-valued random variables with sufficient care.
 
-By assuming there are only $n$ discrete outcomes, then we can express any potential contract function $S(\cdot)$ as a finite linear combination of elementary basis functions:
+By assuming there are only $n$ discrete outcomes, then we can express any potential contract function $C(\cdot)$ as a finite linear combination of elementary basis functions:
 
 $$
 \begin{equation}
-S(x) = \sum_{i=1}^n r_i \delta_i(x)
+C(x) = \sum_{i=1}^n r_i \delta_i(x)
 \label{eq:contract-decomposition}
 \end{equation}
 $$
@@ -278,7 +281,7 @@ where $r_1, \dots, r_n$ are scalar coefficients denoting the return of outcome $
 
 $$
 \begin{equation}
-r_i = S(i) ~,
+r_i = C(i) ~,
 \end{equation}
 $$
 
@@ -292,15 +295,7 @@ $$
 $$
 
 
-
-Let $\pi(S)$ denote the price of a contract function $S$. 
-Our goal will be to show that:
-
-$$
-\pi(S) = \mathbb{E}_{X \sim B}  \left [ S(X) \right ]
-$$
-
-for an appropriate choice of distribution $B$.
+Recall that our goal is to show $\pi(C) = \mathbb{E} \left [ C(X) \right ]$, with the expectation taken with respect to some appropriate choice of distribution $B$.
 We will show that this is true if the market is organized such that no player can recieve "free money" without taking any risk (in other words, there are no [arbitrage](https://en.wikipedia.org/wiki/Arbitrage) opportunities).
 We assume that any player can either buy or sell contracts, and that [fractional contracts](https://en.wikipedia.org/wiki/Fractional_ownership) are supported in the market (e.g. by sharing contracts with other players).
 

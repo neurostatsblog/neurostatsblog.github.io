@@ -38,12 +38,13 @@ build_one() {
 
   # Run pandoc inside the `pdf` service. The repo is mounted at /data.
   docker compose run --rm pdf "pandoc \
-    --from=markdown+yaml_metadata_block+tex_math_dollars+footnotes+raw_tex \
+    --from=markdown+yaml_metadata_block+tex_math_dollars+footnotes+raw_tex+raw_html+native_divs \
     --to=pdf \
-    --pdf-engine=pdflatex \
+    --pdf-engine=lualatex \
     --standalone \
     --template=/data/pdf/template.tex \
     --lua-filter=/data/pdf/unwrap-ams.lua \
+    --lua-filter=/data/pdf/callouts.lua \
     --output=/data/pdfs/${slug}.pdf \
     /data/${input_path}"
 }

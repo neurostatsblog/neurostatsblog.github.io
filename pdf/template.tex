@@ -1,64 +1,195 @@
 \documentclass[11pt]{article}
 
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\usepackage[a4paper,margin=1in]{geometry}
+%======================================================================
+% Fonts — Latin Modern via fontspec (lualatex-native Unicode handling)
+%======================================================================
+\usepackage{fontspec}
+\setmainfont{Latin Modern Roman}
+\setsansfont{Latin Modern Sans}
+\setmonofont{Latin Modern Mono}
+\usepackage{microtype}                % better justification
+
+%======================================================================
+% Math
+%======================================================================
 \usepackage{amsmath,amssymb,amsthm}
-\usepackage{microtype}
-\usepackage[hidelinks]{hyperref}
+
+%======================================================================
+% Page geometry
+%======================================================================
+\usepackage[letterpaper,margin=1in,top=1.1in,bottom=1.1in]{geometry}
+
+%======================================================================
+% Colors (sampled from the site's CSS --color-primary)
+%======================================================================
 \usepackage{xcolor}
+\definecolor{nsbprimary}{HTML}{3A3FBF}     % accent indigo (--color-primary)
+\definecolor{nsbmuted}{HTML}{6B6860}       % gray for header text (--color-text-muted)
+\definecolor{nsbtheorembg}{HTML}{DDDFF5}   % --color-primary-highlight
+\definecolor{nsboffsetbg}{HTML}{F1EDE6}    % --color-surface-offset
+\definecolor{nsbpaleframe}{HTML}{D4CFC6}   % --color-border
+
+%======================================================================
+% Links
+%======================================================================
+\usepackage[colorlinks=true,
+            linkcolor=nsbprimary,
+            citecolor=nsbprimary,
+            urlcolor=nsbprimary,
+            breaklinks=true]{hyperref}
+
+%======================================================================
+% Lists / tables / graphics
+%======================================================================
 \usepackage{enumitem}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{array}
 \usepackage{calc}
+
+%======================================================================
+% Page headers/footers (running site URL on every page)
+%======================================================================
 \usepackage{fancyhdr}
-\usepackage{titling}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhead[L]{\color{nsbmuted}\footnotesize neurostatsblog.github.io$if(date)$\;\textperiodcentered\;$date$$endif$}
+\fancyfoot[C]{\color{nsbmuted}\footnotesize\thepage}
+% First page should also carry the header
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \fancyhead[L]{\color{nsbmuted}\footnotesize neurostatsblog.github.io$if(date)$\;\textperiodcentered\;$date$$endif$}%
+  \fancyfoot[C]{\color{nsbmuted}\footnotesize\thepage}%
+}
 
-% Pandoc commonly emits these
-\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-\providecommand{\passthrough}[1]{#1}
-
-% Tighter spacing for footnotes (matches blog style)
+%======================================================================
+% Footnotes (tighter, flush with margin)
+%======================================================================
 \usepackage[hang,flushmargin,bottom]{footmisc}
 \setlength{\footnotemargin}{1em}
 
+%======================================================================
 % Paragraph style
+%======================================================================
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.6em}
 
-% Section heading style
+%======================================================================
+% Section headings — unnumbered, matches web hierarchy
+%======================================================================
 \usepackage{titlesec}
-\titleformat*{\section}{\Large\bfseries}
-\titleformat*{\subsection}{\large\bfseries}
-\titleformat*{\subsubsection}{\normalsize\bfseries}
+\titleformat{\section}{\normalfont\Large\bfseries}{}{0pt}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{}{0pt}{}
+\titleformat{\subsubsection}{\normalfont\normalsize\bfseries}{}{0pt}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.6em}
+\titlespacing*{\subsection}{0pt}{1.2em}{0.4em}
+\titlespacing*{\subsubsection}{0pt}{1em}{0.3em}
+% Treat all sections as unnumbered (pandoc emits \section{...}; we want \section*)
+\renewcommand{\thesection}{}
+\setcounter{secnumdepth}{0}
 
-% Title block
-\pretitle{\begin{center}\LARGE\bfseries\hspace{0pt}}
-\posttitle{\par\end{center}\vskip 0.3em}
-\preauthor{\begin{center}\normalsize\hspace{0pt}}
-\postauthor{\par\end{center}}
-\predate{\begin{center}\small\itshape\hspace{0pt}}
-\postdate{\par\end{center}\vskip 1em}
+%======================================================================
+% Callout boxes (theorem / lemma / definition / proof)
+% Mirror the web's .callout-* styling: thick left rule, tinted fill.
+% Uses mdframed (in base TeX Live) — avoids tcolorbox's pdfcol dependency.
+%======================================================================
+\usepackage{mdframed}
+
+\newmdenv[%
+  topline=false, bottomline=false, rightline=false, leftline=true,
+  linewidth=3pt, linecolor=nsbprimary,
+  backgroundcolor=nsbtheorembg,
+  skipabove=1em, skipbelow=1em,
+  innerleftmargin=12pt, innerrightmargin=10pt,
+  innertopmargin=8pt, innerbottommargin=8pt
+]{nsbcallouttheorem}
+
+\newmdenv[%
+  topline=false, bottomline=false, rightline=false, leftline=true,
+  linewidth=3pt, linecolor=nsbmuted,
+  backgroundcolor=nsboffsetbg,
+  skipabove=1em, skipbelow=1em,
+  innerleftmargin=12pt, innerrightmargin=10pt,
+  innertopmargin=8pt, innerbottommargin=8pt
+]{nsbcalloutlemma}
+
+\newmdenv[%
+  topline=false, bottomline=false, rightline=false, leftline=true,
+  linewidth=3pt, linecolor=black,
+  backgroundcolor=nsboffsetbg,
+  skipabove=1em, skipbelow=1em,
+  innerleftmargin=12pt, innerrightmargin=10pt,
+  innertopmargin=8pt, innerbottommargin=8pt
+]{nsbcalloutdefinition}
+
+\newmdenv[%
+  topline=false, bottomline=false, rightline=false, leftline=true,
+  linewidth=2pt, linecolor=nsbpaleframe,
+  backgroundcolor=white,
+  skipabove=1em, skipbelow=1em,
+  innerleftmargin=10pt, innerrightmargin=10pt,
+  innertopmargin=6pt, innerbottommargin=6pt,
+  fontcolor=nsbmuted
+]{nsbcalloutproof}
+
+%======================================================================
+% Pandoc helpers
+%======================================================================
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+
+%======================================================================
+% Title block — arxiv-style with colored rule
+%======================================================================
+\makeatletter
+
+\newcommand{\nsbtitleblock}{%
+  \begingroup
+  \centering
+  {\LARGE\bfseries \@title \par}%
+  \vspace{0.5em}%
+  {\color{nsbprimary}\rule{\linewidth}{0.6pt}}\par
+  $if(subtitle)$
+  \vspace{0.6em}%
+  {\large\itshape $subtitle$\par}%
+  $endif$
+  \vspace{1.4em}%
+  $if(authors)$
+  {\normalsize
+  $for(authors)$%
+  \begin{minipage}[t]{0.95\linewidth}\centering
+    {$authors.name$}\\[2pt]
+    $if(authors.affiliation)$\emph{$authors.affiliation$}\\[2pt]$endif$
+    $if(authors.email)$\texttt{\small $authors.email$}$endif$
+  \end{minipage}%
+  $sep$\hspace{2em}%
+  $endfor$
+  \par}
+  $endif$
+  $if(date)$
+  \vspace{1.0em}%
+  {\small\itshape $date$\par}%
+  $endif$
+  \vspace{1.8em}%
+  \endgroup
+}
+
+\makeatother
 
 $if(title)$
-\title{$title$$if(subtitle)$\\[0.3em]{\normalsize\mdseries\textit{$subtitle$}}$endif$}
-$endif$
-$if(authors)$
-\author{$for(authors)$$authors$$sep$ \and $endfor$}
+\title{$title$}
 $endif$
 $if(date)$
 \date{$date$}
-$else$
-\date{}
 $endif$
 
 \begin{document}
 
 $if(title)$
-\maketitle
+\nsbtitleblock
 $endif$
 
 $body$
