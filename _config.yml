@@ -50,6 +50,10 @@ exclude:
   - Dockerfile
   - docker-compose.yml
   - vendor
+  - notes
+  - code
+  - bin
+  - pdf
 
 # Collections and defaults
 defaults:

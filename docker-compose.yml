@@ -17,5 +17,16 @@ services:
     volumes:
       - .:/data
 
+  betting:
+    build:
+      context: ./code/betting
+      dockerfile: Dockerfile
+    image: neurostatsblog-betting
+    working_dir: /app
+    volumes:
+      - ./code/betting:/app
+      - nemos-cache:/root/.cache
+
 volumes:
   bundle:
+  nemos-cache:

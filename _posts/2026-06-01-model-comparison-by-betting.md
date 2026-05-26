@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Betting games for model comparison"
+title: "Using a Betting Game to Interpret Bits per Spike"
 subtitle: "A simple way to interpret heldout log-likelihood scores"
 date: 2026-05-01
 tags: [statistics]
@@ -13,7 +13,7 @@ reviewers: ["n/a"]
 
 Whenever we fit a model to neural or behavioral data, we need to benchmark it against simpler or well-known baselines.
 Typically this is done by reporting the difference in log-likelihoods on heldout data.
-For example, the popular "bits per spike" performance metric is simply the log (base 2) likelihood of the model minus the log (base 2) likelihood of a homogenous Poisson process (or another approriate baseline model), divided by the total number of spikes in the dataset.[^bits-per-spike]
+For example, the popular "bits per spike" performance metric is simply the log (base 2) likelihood of the model minus the log (base 2) likelihood of a homogenous Poisson process (or another approriate baseline model), divided by the total number of spikes in the dataset.
 
 This post offers some thoughts on how we can interpret this performance measure.
 For example, if my model gives a 0.34 bits per spike improvement over the baseline, should I interpret that as very good? Marginal? Completely inconsequential?
@@ -30,12 +30,10 @@ We assume these samples are independent and identically distributed according to
 Our hope is that $Q$ is in some sense "closer" to the true distribution $P$ than the basline model $B$.
 
 We will make some mild assumptions.
-In particular, that $Q$ and $B$ have density functions $q(x)$ and $b(x)$, and that these density functions have full support over the space of observations.
-Thus, for any randomly observed datapoint $X \sim P$, we know that $q(X) > 0$ and $b(X) > 0$ almost surely.
-Intuitively, this allows us to compute *likelihood ratios*, $q(X)/b(X)$, without having to worry about divide-by-zero errors.
-This also assures us that log-likelihoods, $\log q(X)$ and $\log b(X)$, are always finite.
+In particular, that $Q$ and $B$ have strictly positive probability density or mass functions $q(x)>0$ and $b(x)>0$.
+Intuitively, this allows us to compute *likelihood ratios*, $q(X)/b(X)$ for $X \sim P$, without having to worry about divide-by-zero errors.
 
-Given an infinite amount of heldout data, our ideal measure of performance (at least for the purposes of this post) is the expected log-likelihood ratio:
+Given an infinite amount of heldout data, a nice measure of performance is the expected log-likelihood ratio:
 $$
 \begin{equation}
 \mathcal{L} = \mathbb{E}_{X \sim P} \Big [ \log q(X)/ b(X) \Big ] = \mathbb{E}_{X \sim P} \Big [ \log q(X) - \log b(X) \Big ] 
@@ -48,20 +46,59 @@ $$
 \mathcal{L} \approx \widehat{\mathcal{L}} = \frac{1}{T} \sum_{t=1}^T \log q(X_t)/ b(X_t)  = \frac{1}{T} \sum_{t=1}^T \Big [ \log q(X) - \log b(X) \Big ] 
 \label{eq:empirical-log-likelihood-ratio}
 $$
-It is worth remarking that this entire post will not deal with the training process---i.e. how does one find $Q$?
-This typically involves optimizing parameters, so one may elsewhere see the liklihood expressed as something like $q (x \mid \theta)$ where $\theta$ denotes trainable parameters.
-However, we don't need to refer to $\theta$ at all for the purposes of this post so we simply write $q(x)$ in place of $q (x \mid \theta)$.
 
-<!-- Similarly, we are often interested in fitting regression models, which predict outcomes (e.g. neural spikes) based on inputs variables (e.g. stimulus or behavioral variables).
-Concretely, suppose that our test data comes as a sequence of paired observations $(X_1, U_1), (X_2, U_2), (X_3, U_3), \dots$ where the $U$'s denote inputs.
-In this case, our model $Q$ and baseline $B$ would now take the form of conditional probability distributions, and the expected log-likelihood ratio would become $\log q ( X \mid U) / b ( X \mid U)$ taken in expectation over $X, U \sim P$.
-So the extension to regression models is immediate and not worth cluttering notation by explicitly denoting input variables. -->
+We have thus far used natural logarithms, but substitute base-2 logarithms into the results can help aid our interpretation.
+By the change of base formula, $\mathcal{L}_2 = \mathcal{L} / \log(2)$ is the expected base-2 log likelihood.
+
+Even more intruigingly, we will be able to draw a connection to null hypothesis testing at significance threshold $\alpha$ (for example, $\alpha = 0.05$).
+It turns out that the expected base-$(1/\alpha)$ log likelihood, $\mathcal{L}_{1/\alpha} = \mathcal{L} \cdot \log(\alpha)$, will have a very satisfying interpretation.
+
+## A Demo of the Betting Game
+
+Our goal is to come up with intuitive interpretations of $\mathcal{L}$ as a measure of model performance.
+One way to approach this is to imagine model $Q$ as a "player" in a betting game based on forecasting values of $X_1, X_2, X_3, \dots$ sampled as heldout data.
+The bets made by the player are set by the "market" which operates according to the baseline model $B$.
+
+Before we get to the precise details of the game, let's show a few examples.
+Below are tuning curves fit to three example head-direction cells from the mouse anterior thalamus (Peyrache et al., 2015), distributed through the [nemos](https://nemos.readthedocs.io/) library.
+Each cell's spiking is modulated by the animal's current head direction, and binning spike counts by head-direction angle gives *empirical firing rates* (grey dots).
+We then used [nemos](https://nemos.readthedocs.io/) to fit a GLM model with cyclic B-spline basis functions (solid line, $Q$), and a homogenous Poisson process as a baseline model (dashed grey line).
+
+![Three example cells with strong, intermediate, and weak head direction modulation. For each cell we fit a GLM model, $Q$, and a flat baseline model, $B$.](/assets/img/posts/2026-06-01-betting/tuning_curves_train.png)
+
+The plots above were generated using 50% of the observations as "training data".
+The remaining 50% of the observations serve as heldout "test data" which we use to play the forecasting game.
+
+In the game, player $Q$ gambles their wealth over discrete rounds of betting.
+We use $W_t$ to denote the wealth of the player at round $t$ of the game.
+Intuitively, if $Q$ is a much better model of the data than $B$ then the player has an "edge" that they can exploit and generate returns very quickly---in fact, it turns out to be exponentially fast.
+
+In the figure below, we plot how the player's wealth $W_t$ evolves across the test set for each of the three cells.
+Every player starts with $W_0 = 1$ and the y-axis is on a $\log_2$ scale, so a value of $\log_2 W_t = 10$ means the player has doubled their wealth ten times (a $2^{10} = 1024\times$ return).
+For each cell we ran ten independent random train/test splits of the recording and overlaid all ten trajectories in one panel.
+Notice that the x-axis range differs across panels --- the strong cell's wealth game unfolds in seconds, while the weak cell's takes the full ~15 minutes of test data.
+
+![Wealth trajectories for the three example cells, ten random train/test splits each. The y-axis is on a $\log_2$ scale (number of doublings of the starting wealth). The dashed grey horizontal line at $\log_2 W_t \approx 4.3$ marks a threshold we will motivate later. Each panel uses its own x-axis range so the dynamics of each cell are visible at an appropriate scale.](/assets/img/posts/2026-06-01-betting/wealth_trajectory.png)
+
+For the **strong cell** (left panel), the player's wealth grows roughly linearly on the $\log_2$ scale at a rate of about 37 doublings per second.
+Wealth multiplies by a factor of $2^{37}$ (about $10^{11}$) every second of test data --- the player is doubling their bankroll roughly every 27 milliseconds.
+The ten trajectories cluster tightly because the underlying signal is strong enough that essentially any random split of the recording produces nearly the same model and the same betting edge.
+
+For the **intermediate cell** (middle panel) we see the same qualitative pattern --- linear growth on the $\log_2$ scale --- but at a much shallower slope of about 0.4 doublings per second, or one doubling every 2.5 seconds.
+Across the 7-minute test window the player still ends up with on the order of $2^{150}$ times their starting wealth, just at a less dizzying pace.
+The trajectories fan out a bit more across the splits, reflecting that the weaker signal leaves more room for split-to-split variability in the fitted model.
+
+For the **weak cell** (right panel), the player has effectively no edge at all.
+Wealth wanders around the starting value of $W_0 = 1$ and drifts slightly *downward* on average; across all ten splits, the trajectories stay well below the dashed threshold line at the top of the panel.
+This is the behavior we hope to see whenever a model offers no genuine improvement over the baseline: betting on a useless predictor is, in the long run, a losing strategy.
+
+What we'd like to do now is make this picture rigorous.
+Specifically, we want to (1) define exactly how each round of betting works, (2) explain the optimal strategy that player $Q$ can implement, and (3) understand what the significance threshold line in the figure means in terms of a formal hypothesis test.
+
 
 ## Introducing the Game
 
-Recall that our goal is to come up with intuitive interpretations of $\mathcal{L}$ as a measure of model performance.
-One way to approach this is to imagine model $Q$ as a "player" in a betting game based on forecasting values of $X_1, X_2, X_3, \dots$ sampled as heldout data.
-The bets made by the player are set by the "market" which operates according to the baseline model $B$.
+
 
 The game starts by giving player $Q$ one unit of wealth:
 $$
@@ -224,8 +261,6 @@ Youtube Tutorial Lectures by Ramdas, "A Martingale Theory of Evidence"
 
 Textbook Ramdas and Wang (2025). ["Hypothesis Testing With E-Values."](https://www.stat.cmu.edu/~aramdas/ebook-final.pdf)
 
-
-[^bits-per-spike]: Normalizing by the number of spikes in the dataset has always seemed like a weird choice to me, and I might dig into this in a future post.
 
 [^q-small]: This ensures that $Q$'s beliefs do not appreciably drive the price of contracts. If $Q$ were extremely wealthy and using all of their purchasing power to buy contracts at each round of betting, then their demands would pull the market pricing distribution closer in line to their beliefs.
 

@@ -1,0 +1,11 @@
+nemos>=0.2
+pynapple>=0.7
+numpy
+matplotlib
+# pynapple's NWB loader needs these; usually pulled in transitively but
+# pinned here to avoid surprises.
+pynwb
+h5py
+# Optional nemos deps used by nemos.fetch for downloading example datasets.
+pooch
+tqdm
