@@ -5,7 +5,7 @@ source "https://rubygems.org"
 # sets safe: true which disables custom _plugins/ — and we need one for the
 # blank-lines-around-display-math hook. Production (GitHub Pages) ignores
 # _plugins/ anyway, so this divergence is purely a local-preview concern.
-gem "jekyll", "~> 3.10.0"
+gem "jekyll", "~> 4.3"
 gem "kramdown-parser-gfm"
 
 group :jekyll_plugins do
