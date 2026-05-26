@@ -31,8 +31,9 @@ layout: default
         <span class="byline-item">
           <span class="byline-label">By</span>
           {% for author in page.authors -%}
-            {%- assign author_slug = author | slugify -%}
-            <a class="byline-link" href="{{ '/authors/' | append: author_slug | append: '/' | relative_url }}">{{ author }}</a>
+            {%- assign author_name = author.name | default: author -%}
+            {%- assign author_slug = author_name | slugify -%}
+            <a class="byline-link" href="{{ '/authors/' | append: author_slug | append: '/' | relative_url }}">{{ author_name }}</a>
             {%- unless forloop.last %}, {% endunless -%}
           {%- endfor %}
         </span>

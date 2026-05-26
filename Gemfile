@@ -19,7 +19,7 @@ end
 gem "csv"
 gem "base64"
 gem "logger"
-gem "webrick"
-gem "tzinfo"
-gem "tzinfo-data"
-gem "wdm"
+gem "webrick", "~> 1.8"
+gem "tzinfo", ">= 1", "< 3"
+gem "tzinfo-data", platforms: [:mingw, :x64_mingw, :mswin, :jruby]
+gem "wdm", "~> 0.1.1", platforms: [:mingw, :x64_mingw, :mswin]

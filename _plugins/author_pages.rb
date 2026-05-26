@@ -33,7 +33,9 @@ module Jekyll
 
       site.posts.docs.each do |post|
         Array(post.data["authors"]).each do |author|
-          buckets[author] << post
+          name = author.is_a?(Hash) ? author["name"] : author
+          next if name.nil? || name.to_s.empty?
+          buckets[name] << post
         end
       end
 
