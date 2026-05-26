@@ -1,0 +1,21 @@
+services:
+  site:
+    build: .
+    image: neurostatsblog-jekyll
+    ports:
+      - "4000:4000"
+      - "35729:35729"
+    volumes:
+      - .:/srv/jekyll
+      - bundle:/usr/local/bundle
+
+  pdf:
+    image: pandoc/extra:3.1
+    platform: linux/amd64
+    entrypoint: ["/bin/sh", "-c"]
+    working_dir: /data
+    volumes:
+      - .:/data
+
+volumes:
+  bundle:
