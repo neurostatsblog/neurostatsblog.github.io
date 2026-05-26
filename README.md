@@ -77,6 +77,17 @@ bundle exec jekyll serve --livereload
 # Open http://localhost:4000
 ```
 
+If you want to test the search functionality locally, you need to have `node.js` installed. E.g. on mac using homebrew:
+```
+brew install node
+```
+Then, build the site with jekyll and serve it using npx:
+```
+bundle exec jekyll build
+npx -y pagefind@^1 --site _site --serve
+# Open http://localhost:1414
+```
+
 ---
 
 ## Writing a new post
