@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Using a Betting Game to Interpret Bits per Spike"
+title: "Bits per Spike as a Betting Game"
 subtitle: "A simple way to interpret heldout log-likelihood scores"
 date: 2026-05-01
 tags: [statistics]
@@ -59,21 +59,21 @@ Our goal is to come up with intuitive interpretations of $\mathcal{L}$ as a meas
 One way to approach this is to imagine model $Q$ as a "player" in a betting game based on forecasting values of $X_1, X_2, X_3, \dots$ sampled as heldout data.
 The bets made by the player are set by the "market" which operates according to the baseline model $B$.
 
-Before we get to the precise details of the game, let's show a few examples.
-Below are tuning curves fit to three example head-direction cells from the mouse anterior thalamus (Peyrache et al., 2015), distributed through the [nemos](https://nemos.readthedocs.io/) library.
+Before we get to the precise details of the game, let's look at a few examples.
+Figure 1 shows tuning curves fit to three example head-direction cells from the mouse anterior thalamus (Peyrache et al., 2015), distributed through the [**nemos**](https://nemos.readthedocs.io/) library.
 Each cell's spiking is modulated by the animal's current head direction, and binning spike counts by head-direction angle gives *empirical firing rates* (grey dots).
-We then used [nemos](https://nemos.readthedocs.io/) to fit a GLM model with cyclic B-spline basis functions (solid line, $Q$), and a homogenous Poisson process as a baseline model (dashed grey line).
+We then used [**nemos**](https://nemos.readthedocs.io/) to fit a GLM model with cyclic B-spline basis functions (solid line, $Q$), and a homogenous Poisson process as a baseline model (dashed grey line).
 
 ![Three example cells with strong, intermediate, and weak head direction modulation. For each cell we fit a GLM model, $Q$, and a flat baseline model, $B$.](/assets/img/posts/2026-06-01-betting/tuning_curves_train.png)
 
 The plots above were generated using 50% of the observations as "training data".
-The remaining 50% of the observations serve as heldout "test data" which we use to play the forecasting game.
+The remaining 50% of the observations serve as heldout "test data" which we use below to play the forecasting game.
 
 In the game, player $Q$ gambles their wealth over discrete rounds of betting.
 We use $W_t$ to denote the wealth of the player at round $t$ of the game.
 Intuitively, if $Q$ is a much better model of the data than $B$ then the player has an "edge" that they can exploit and generate returns very quickly---in fact, it turns out to be exponentially fast.
 
-In the figure below, we plot how the player's wealth $W_t$ evolves across the test set for each of the three cells.
+In Figure 2, we plot how the player's wealth $W_t$ evolves across the test set for each of the three cells.
 Every player starts with $W_0 = 1$ and the y-axis is on a $\log_2$ scale, so a value of $\log_2 W_t = 10$ means the player has doubled their wealth ten times (a $2^{10} = 1024\times$ return).
 For each cell we ran ten independent random train/test splits of the recording and overlaid all ten trajectories in one panel.
 Notice that the x-axis range differs across panels --- the strong cell's wealth game unfolds in seconds, while the weak cell's takes the full ~15 minutes of test data.
@@ -81,7 +81,6 @@ Notice that the x-axis range differs across panels --- the strong cell's wealth 
 ![Wealth trajectories for the three example cells, ten random train/test splits each. The y-axis is on a $\log_2$ scale (number of doublings of the starting wealth). The dashed grey horizontal line at $\log_2 W_t \approx 4.3$ marks a threshold we will motivate later. Each panel uses its own x-axis range so the dynamics of each cell are visible at an appropriate scale.](/assets/img/posts/2026-06-01-betting/wealth_trajectory.png)
 
 For the **strong cell** (left panel), the player's wealth grows roughly linearly on the $\log_2$ scale at a rate of about 37 doublings per second.
-Wealth multiplies by a factor of $2^{37}$ (about $10^{11}$) every second of test data --- the player is doubling their bankroll roughly every 27 milliseconds.
 The ten trajectories cluster tightly because the underlying signal is strong enough that essentially any random split of the recording produces nearly the same model and the same betting edge.
 
 For the **intermediate cell** (middle panel) we see the same qualitative pattern --- linear growth on the $\log_2$ scale --- but at a much shallower slope of about 0.4 doublings per second, or one doubling every 2.5 seconds.
@@ -92,7 +91,20 @@ For the **weak cell** (right panel), the player has effectively no edge at all.
 Wealth wanders around the starting value of $W_0 = 1$ and drifts slightly *downward* on average; across all ten splits, the trajectories stay well below the dashed threshold line at the top of the panel.
 This is the behavior we hope to see whenever a model offers no genuine improvement over the baseline: betting on a useless predictor is, in the long run, a losing strategy.
 
-What we'd like to do now is make this picture rigorous.
+By the end of this post, we'll see that the rate of wealth growth is given by 
+We will see that the rate of wealth growth is given by $\mathcal{L}_2 / \Delta t$ where $\Delta t = 0.05$ seconds is the size of the time bins we used in the analysis.
+So the base-2 expected log likelihood, $\mathcal{L}_2$, has a very nice interpretation as the amount of data needed to "double your wealth" in a betting game.
+
+We can also connect this to a null hypothesis test with significance level $\alpha$.
+It turns out that if the player ever generates more than $1/\alpha$ units of wealth, we can reject the null hypothesis that the true distribution, $P$, is equal to the baseline model, $B$, with type-I error rate less than $\alpha$.
+For example, if we set $\alpha=0.05$, then we can reject the null hypothesis if we ever obtain $W_t > 1/alpha = 20$.
+In light of this, the $\mathcal{L}_{1/\alpha}$, the expected base-$(1/\alpha)$ log likelihood tells us how much data is needed (on average) to reject the null hypothesis that $P=B$.
+Figure 3 below re-plots the data from Figure 2 on this log scale. 
+The units of the y-axis now correspond to the number of times <<CLAUDE FINISH THIS SENTENCE>>
+
+<<CLAUDE ADD FIGURE HERE>>
+
+Now that we've sketched some results, it's time to make this picture rigorous.
 Specifically, we want to (1) define exactly how each round of betting works, (2) explain the optimal strategy that player $Q$ can implement, and (3) understand what the significance threshold line in the figure means in terms of a formal hypothesis test.
 
 

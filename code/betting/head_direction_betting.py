@@ -326,16 +326,43 @@ def _crossing_idx(log_W, alpha):
     return int(crossings[0]) if len(crossings) else None
 
 
-def plot_wealth(results, *, alpha, bin_size, out_path,
+def plot_wealth(results, *, alpha, bin_size, out_path, y_unit="bits",
                 xmax_strong=250, xmax_mid=8000, xmax_weak=None):
     """Three horizontal subplots — strong | intermediate | weak — each
     overlaying its `n_reps` wealth trajectories at semi-transparent alpha.
     Each panel uses its own x-range (passed via xmax_* kwargs; None = full
-    test set) so the dynamics are visible at an appropriate scale."""
+    test set) so the dynamics are visible at an appropriate scale.
+
+    `y_unit` controls the y-axis:
+      "bits":             log_2(W_t) — number of doublings of starting wealth.
+                          Threshold log_2(1/alpha) ≈ 4.32 for alpha=0.05.
+      "alpha_rejections": log_{1/alpha}(W_t) — number of α-rejection's worth
+                          of evidence accumulated. Threshold sits at y = 1
+                          (W_t = 1/alpha). The slope is "α-rejections per
+                          second"; its reciprocal is "seconds to first reject".
+    """
+    if y_unit == "bits":
+        # log_W is in nats; divide by log 2 to get bits (doublings).
+        transform   = lambda lw: lw / np.log(2)
+        threshold   = -np.log2(alpha)
+        ylabel      = r"Cumulative $\log_2 W_t$"
+        rate_label  = "bits/s"
+        unit_factor = 1.0 / np.log(2)
+        title_tag   = ""
+    elif y_unit == "alpha_rejections":
+        log_arecip  = np.log(1.0 / alpha)
+        transform   = lambda lw: lw / log_arecip
+        threshold   = 1.0
+        ylabel      = (fr"Cumulative $\log_{{1/\alpha}} W_t$"
+                       fr"  (α-rejections, α={alpha})")
+        rate_label  = r"$\alpha$-rej/s"
+        unit_factor = 1.0 / log_arecip
+        title_tag   = "  (α-normalized)"
+    else:
+        raise ValueError(f"y_unit must be 'bits' or 'alpha_rejections'; "
+                         f"got {y_unit!r}")
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
-
-    log2_thresh = -np.log2(alpha)
     trajectory_alpha = 0.45
 
     cell_specs = [
@@ -350,35 +377,37 @@ def plot_wealth(results, *, alpha, bin_size, out_path,
         n_reps = len(log_W_reps)
 
         for log_W in log_W_reps:
-            log2_W = log_W / np.log(2)
-            t = np.arange(1, len(log2_W) + 1)
+            y = transform(log_W)
+            t = np.arange(1, len(y) + 1)
             if x_max is not None:
                 m = t <= x_max
-                t, log2_W = t[m], log2_W[m]
-            ax.plot(t, log2_W, color=color, lw=1.0, alpha=trajectory_alpha)
+                t, y = t[m], y[m]
+            ax.plot(t, y, color=color, lw=1.0, alpha=trajectory_alpha)
 
-        ax.axhline(log2_thresh, color="red", ls=":", lw=1,
+        ax.axhline(threshold, color="red", ls=":", lw=1,
                    label=fr"reject @ $\alpha={alpha}$", alpha=0.5)
         ax.axhline(0, color="red", lw=1, alpha=0.5)
 
-        finals = np.array([lw[-1] / np.log(2) for lw in log_W_reps])
-        bits_per_sec = finals.mean() / len(log_W_reps[0]) / bin_size
+        finals = np.array([lw[-1] for lw in log_W_reps])  # nats
+        per_sec_in_unit = (finals.mean() / len(log_W_reps[0])
+                           / bin_size * unit_factor)
         n_rej = sum(1 for lw in log_W_reps
                     if _crossing_idx(lw, alpha) is not None)
 
         cell_id = res["cell_id"]
         ax.set_title(f"{title_prefix} cell {cell_id}\n"
-                     f"{bits_per_sec:+.3f} bits/s avg, "
+                     f"{per_sec_in_unit:+.3f} {rate_label} avg, "
                      f"rejected {n_rej}/{n_reps}",
                      fontsize=10)
         ax.set_xlabel(f"Test bin index $t$  (bin size {bin_size*1000:.0f} ms)")
         if ax is axes[0]:
-            ax.set_ylabel(r"Cumulative $\log_2 W_t$")
+            ax.set_ylabel(ylabel)
         ax.legend(frameon=False, fontsize=8, loc="lower right")
         ax.spines[["top", "right"]].set_visible(False)
 
     fig.suptitle(f"Wealth trajectories: GLM vs. homogeneous Poisson baseline "
-                 f"({len(results['strong']['log_W_reps'])} reps per cell)",
+                 f"({len(results['strong']['log_W_reps'])} reps per cell)"
+                 f"{title_tag}",
                  fontsize=11)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
@@ -566,13 +595,24 @@ def main():
     }
 
     print("Saving figures ...")
+    xmax_weak = args.xmax_weak if args.xmax_weak > 0 else None
     plot_wealth(
         results_for_plot,
         alpha=args.alpha, bin_size=args.bin_size,
         out_path=FIG_DIR / "wealth_trajectory.pdf",
+        y_unit="bits",
         xmax_strong=args.xmax_strong,
         xmax_mid=args.xmax_mid,
-        xmax_weak=args.xmax_weak if args.xmax_weak > 0 else None,
+        xmax_weak=xmax_weak,
+    )
+    plot_wealth(
+        results_for_plot,
+        alpha=args.alpha, bin_size=args.bin_size,
+        out_path=FIG_DIR / "wealth_alpha_normalized.pdf",
+        y_unit="alpha_rejections",
+        xmax_strong=args.xmax_strong,
+        xmax_mid=args.xmax_mid,
+        xmax_weak=xmax_weak,
     )
     plot_tuning_triple(
         results_for_plot, basis,
@@ -587,6 +627,7 @@ def main():
         which="test",
     )
     print(f"  wrote {FIG_DIR}/wealth_trajectory.pdf")
+    print(f"  wrote {FIG_DIR}/wealth_alpha_normalized.pdf")
     print(f"  wrote {FIG_DIR}/tuning_curves_train.pdf")
     print(f"  wrote {FIG_DIR}/tuning_curves_test.pdf")
 

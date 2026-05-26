@@ -43,6 +43,11 @@
 %======================================================================
 \usepackage{enumitem}
 \usepackage{graphicx}
+% Pandoc emits \includegraphics[width=W,height=\textheight]{...} for any
+% image with a percentage width. Without keepaspectratio that distorts to
+% fit the full box; with it the smaller of the two constraints wins and
+% the image is scaled to its natural aspect ratio inside that box.
+\setkeys{Gin}{keepaspectratio}
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{array}
