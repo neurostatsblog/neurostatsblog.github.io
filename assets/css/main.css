@@ -6,13 +6,14 @@
 
 /* ── 1. Design Tokens ──────────────────────────────────────── */
 :root, [data-theme="light"] {
-  /* Surfaces — warm off-white, ink-on-paper feel */
-  --color-bg:              #f8f7f3;
-  --color-surface:         #faf9f6;
+  /* Surfaces — near-white, with subtle warm tint kept on offset surfaces
+     (callouts, TOC) for visual hierarchy. */
+  --color-bg:              #ffffff;
+  --color-surface:         #ffffff;
   --color-surface-2:       #ffffff;
-  --color-surface-offset:  #f1ede6;
-  --color-divider:         #e0dbd2;
-  --color-border:          #d4cfc6;
+  --color-surface-offset:  #f4f2ed;
+  --color-divider:         #ebe8e1;
+  --color-border:          #ddd9d1;
 
   /* Text — near-black, warm-toned */
   --color-text:            #1e1c18;
