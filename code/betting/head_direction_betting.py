@@ -45,6 +45,35 @@ import pynapple as nap
 THIS_DIR = Path(__file__).resolve().parent
 FIG_DIR = THIS_DIR / "figures"
 
+# Bump default font sizes across all figures (blog post + PDF both benefit
+# from larger labels). Per-call fontsize args override these as needed.
+plt.rcParams.update({
+    "font.size":         12,
+    "axes.titlesize":    13,
+    "axes.labelsize":    13,
+    "xtick.labelsize":   11,
+    "ytick.labelsize":   11,
+    "legend.fontsize":   11,
+    "figure.titlesize":  14,
+})
+# Mirror each PDF as a PNG inside the Jekyll asset tree so the post can
+# embed the figures directly (web markdown wants raster images served from
+# /assets/...). The script writes PDF + PNG in one go.
+WEB_FIG_DIR = THIS_DIR.parent.parent / "assets" / "img" / "posts" / "2026-06-01-betting"
+
+
+def _save_figure(fig, out_path):
+    """Save matplotlib figure as PDF to `out_path`, and mirror as PNG into
+    `WEB_FIG_DIR` so the blog post (which references PNGs) updates in lockstep.
+    Both file paths are created/overwritten."""
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150)
+    WEB_FIG_DIR.mkdir(parents=True, exist_ok=True)
+    png_path = WEB_FIG_DIR / out_path.with_suffix(".png").name
+    fig.savefig(png_path, dpi=150)
+    plt.close(fig)
+
 # Site palette
 COLOR_STRONG  = "#3a3fbf"   # site primary indigo
 COLOR_MID     = "#3a8c8c"   # teal — visually "between" indigo and gray
@@ -249,9 +278,25 @@ def log_wealth_per_bin(lambda_q, lambda_b, y):
     return (lambda_b - lambda_q) + y * (np.log(lambda_q) - np.log(lambda_b))
 
 
+def anticipated_log_wealth_per_bin(lambda_q, lambda_b):
+    """Per-bin log wealth Q ANTICIPATES — i.e., the player's expected gain
+    under the (possibly wrong) assumption that P = Q.
+
+    For Poisson, E_{Y~Poisson(lambda_q)}[log S(Y|u)] = lambda_q log(lambda_q/lambda_b)
+    - (lambda_q - lambda_b), which is the per-bin KL divergence
+    KL(Poisson(lambda_q) || Poisson(lambda_b)). Summing over bins gives
+    Q's anticipated wealth trajectory; comparing to the realized trajectory
+    (run_game) exposes any model mismatch (residual KL(P || Q) gap)."""
+    lambda_q = np.clip(np.asarray(lambda_q).reshape(-1), 1e-12, None)
+    lambda_b = max(lambda_b, 1e-12)
+    return lambda_q * (np.log(lambda_q) - np.log(lambda_b)) - (lambda_q - lambda_b)
+
+
 def run_game(model_q, lambda_b, X_test, y_test):
     lambda_q = np.asarray(model_q.predict(X_test)).reshape(-1)
-    return np.cumsum(log_wealth_per_bin(lambda_q, lambda_b, y_test))
+    log_W = np.cumsum(log_wealth_per_bin(lambda_q, lambda_b, y_test))
+    log_W_ant = np.cumsum(anticipated_log_wealth_per_bin(lambda_q, lambda_b))
+    return log_W, log_W_ant
 
 
 # ---------------------------------------------------------------------------
@@ -263,32 +308,38 @@ def run_experiment(label, X, y, *, seed):
     X_tr, y_tr, X_te, y_te = split_half(X, y, shuffle=True, seed=seed)
     model_q = fit_Q(X_tr, y_tr)
     lambda_b = fit_B(y_tr)
-    log_W = run_game(model_q, lambda_b, X_te, y_te)
+    log_W, log_W_ant = run_game(model_q, lambda_b, X_te, y_te)
     return {
-        "label":    label,
-        "log_W":    log_W,
-        "model_q":  model_q,
-        "lambda_b": lambda_b,
-        "n_test":   len(y_te),
-        "n_train":  len(y_tr),
+        "label":     label,
+        "log_W":     log_W,
+        "log_W_ant": log_W_ant,
+        "model_q":   model_q,
+        "lambda_b":  lambda_b,
+        "n_test":    len(y_te),
+        "n_train":   len(y_tr),
     }
 
 
 def run_reps(experiment_fn, *, n_reps, seed_start):
     """Run `experiment_fn(seed=...)` `n_reps` times, return a result dict
-    with `log_W_reps` (list of arrays) plus `model_q` / `lambda_b` from
-    the FIRST rep (used for tuning-curve display)."""
+    with `log_W_reps` (list of arrays) and `log_W_ant_reps` (list of arrays;
+    the player's anticipated trajectories under P=Q), plus `model_q` /
+    `lambda_b` from the FIRST rep (used for tuning-curve display)."""
     log_W_reps = []
+    log_W_ant_reps = []
     first = None
     for i in range(n_reps):
         s = seed_start + i
         res = experiment_fn(seed=s)
         log_W_reps.append(res["log_W"])
+        log_W_ant_reps.append(res["log_W_ant"])
         if i == 0:
             first = res
     out = dict(first)
-    out["log_W_reps"] = log_W_reps
+    out["log_W_reps"]     = log_W_reps
+    out["log_W_ant_reps"] = log_W_ant_reps
     out.pop("log_W", None)
+    out.pop("log_W_ant", None)
     return out
 
 
@@ -305,14 +356,15 @@ def run_experiment_true_null(label, X, y, *, seed):
     model_q = fit_Q(X_tr, y_tr)
     lambda_b = fit_B(y_tr)
     y_te_sim = simulate_null_counts(len(X_te), lambda_b, seed=seed + 7919)
-    log_W = run_game(model_q, lambda_b, X_te, y_te_sim)
+    log_W, log_W_ant = run_game(model_q, lambda_b, X_te, y_te_sim)
     return {
-        "label":    label,
-        "log_W":    log_W,
-        "model_q":  model_q,
-        "lambda_b": lambda_b,
-        "n_test":   len(y_te_sim),
-        "n_train":  len(y_tr),
+        "label":     label,
+        "log_W":     log_W,
+        "log_W_ant": log_W_ant,
+        "model_q":   model_q,
+        "lambda_b":  lambda_b,
+        "n_test":    len(y_te_sim),
+        "n_train":   len(y_tr),
     }
 
 
@@ -327,7 +379,8 @@ def _crossing_idx(log_W, alpha):
 
 
 def plot_wealth(results, *, alpha, bin_size, out_path, y_unit="bits",
-                xmax_strong=250, xmax_mid=8000, xmax_weak=None):
+                xmax_strong=250, xmax_mid=8000, xmax_weak=None,
+                x_in_seconds=False, show_anticipated=False):
     """Three horizontal subplots — strong | intermediate | weak — each
     overlaying its `n_reps` wealth trajectories at semi-transparent alpha.
     Each panel uses its own x-range (passed via xmax_* kwargs; None = full
@@ -343,26 +396,30 @@ def plot_wealth(results, *, alpha, bin_size, out_path, y_unit="bits",
     """
     if y_unit == "bits":
         # log_W is in nats; divide by log 2 to get bits (doublings).
-        transform   = lambda lw: lw / np.log(2)
-        threshold   = -np.log2(alpha)
-        ylabel      = r"Cumulative $\log_2 W_t$"
-        rate_label  = "bits/s"
-        unit_factor = 1.0 / np.log(2)
-        title_tag   = ""
+        # Title rate is reported per-bin (intrinsic to the data, not the
+        # binning choice) so 1 bit/bin means "wealth doubles every bin."
+        transform    = lambda lw: lw / np.log(2)
+        threshold    = -np.log2(alpha)
+        ylabel       = r"Cumulative $\log_2 W_t$"
+        rate_label   = "bits/bin"
+        unit_factor  = 1.0 / np.log(2)
+        time_divisor = 1.0          # per-bin
+        title_tag    = ""
     elif y_unit == "alpha_rejections":
-        log_arecip  = np.log(1.0 / alpha)
-        transform   = lambda lw: lw / log_arecip
-        threshold   = 1.0
-        ylabel      = (fr"Cumulative $\log_{{1/\alpha}} W_t$"
-                       fr"  (α-rejections, α={alpha})")
-        rate_label  = r"$\alpha$-rej/s"
-        unit_factor = 1.0 / log_arecip
-        title_tag   = "  (α-normalized)"
+        log_arecip   = np.log(1.0 / alpha)
+        transform    = lambda lw: lw / log_arecip
+        threshold    = 1.0
+        ylabel       = (fr"Cumulative $\log_{{1/\alpha}} W_t$"
+                        fr"  (α-rejections, α={alpha})")
+        rate_label   = r"$\alpha$-rej/s"
+        unit_factor  = 1.0 / log_arecip
+        time_divisor = bin_size     # per-second
+        title_tag    = "  (α-normalized)"
     else:
         raise ValueError(f"y_unit must be 'bits' or 'alpha_rejections'; "
                          f"got {y_unit!r}")
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
     trajectory_alpha = 0.45
 
     cell_specs = [
@@ -374,44 +431,68 @@ def plot_wealth(results, *, alpha, bin_size, out_path, y_unit="bits",
     for ax, (key, color, title_prefix, x_max) in zip(axes, cell_specs):
         res = results[key]
         log_W_reps = res["log_W_reps"]
+        log_W_ant_reps = res["log_W_ant_reps"]
         n_reps = len(log_W_reps)
+        n_bins_full = len(log_W_reps[0])
 
+        # Realized wealth: 10 noisy trajectories
         for log_W in log_W_reps:
             y = transform(log_W)
             t = np.arange(1, len(y) + 1)
             if x_max is not None:
                 m = t <= x_max
                 t, y = t[m], y[m]
-            ax.plot(t, y, color=color, lw=1.0, alpha=trajectory_alpha)
+            x_plot = t * bin_size if x_in_seconds else t
+            ax.plot(x_plot, y, color=color, lw=1.0, alpha=trajectory_alpha)
 
-        ax.axhline(threshold, color="red", ls=":", lw=1,
+        # Optional: anticipated wealth (under P=Q) — straight reference
+        # line through origin with slope = mean per-bin
+        # KL(Poisson(lambda_q) || Poisson(lambda_b)) averaged across reps.
+        # Gap to the realized trajectories visualizes residual model
+        # mismatch (mean-calibration of Q's predicted rates).
+        ant_rate_in_unit = None
+        if show_anticipated:
+            ant_finals_nats = np.array([lw[-1] for lw in log_W_ant_reps])
+            ant_slope_nats = ant_finals_nats.mean() / n_bins_full
+            t_line = np.arange(1, (x_max if x_max is not None else n_bins_full) + 1)
+            ant_line_nats = ant_slope_nats * t_line
+            ant_line_y = transform(ant_line_nats)
+            ant_x = t_line * bin_size if x_in_seconds else t_line
+            ant_rate_in_unit = ant_slope_nats / time_divisor * unit_factor
+            ax.plot(ant_x, ant_line_y, color="black", ls="-", lw=2, alpha=0.8,
+                    label=fr"anticipated ($D_{{\mathrm{{KL}}}}(Q \,\Vert\, B)$)")
+
+        ax.axhline(threshold, color="red", ls=":", lw=2,
                    label=fr"reject @ $\alpha={alpha}$", alpha=0.5)
-        ax.axhline(0, color="red", lw=1, alpha=0.5)
+        ax.axhline(0, color="red", lw=2, alpha=0.5)
 
         finals = np.array([lw[-1] for lw in log_W_reps])  # nats
-        per_sec_in_unit = (finals.mean() / len(log_W_reps[0])
-                           / bin_size * unit_factor)
+        rate = (finals.mean() / n_bins_full
+                / time_divisor * unit_factor)
         n_rej = sum(1 for lw in log_W_reps
                     if _crossing_idx(lw, alpha) is not None)
 
         cell_id = res["cell_id"]
-        ax.set_title(f"{title_prefix} cell {cell_id}\n"
-                     f"{per_sec_in_unit:+.3f} {rate_label} avg, "
-                     f"rejected {n_rej}/{n_reps}",
-                     fontsize=10)
-        ax.set_xlabel(f"Test bin index $t$  (bin size {bin_size*1000:.0f} ms)")
+        if show_anticipated:
+            title_line2 = (f"actual / anticipated: "
+                           f"{rate:+.2f} / {ant_rate_in_unit:+.2f} "
+                           f"{rate_label}  ({n_rej}/{n_reps} reject)")
+        else:
+            title_line2 = (f"{rate:+.3f} {rate_label}  "
+                           f"({n_rej}/{n_reps} reject)")
+        ax.set_title(f"{title_prefix} cell {cell_id}\n{title_line2}")
+        ax.set_xlabel("Time (s)" if x_in_seconds
+                      else f"Test bin index $t$  (bin size {bin_size*1000:.0f} ms)")
         if ax is axes[0]:
             ax.set_ylabel(ylabel)
-        ax.legend(frameon=False, fontsize=8, loc="lower right")
+        ax.legend(frameon=False, loc="best")
         ax.spines[["top", "right"]].set_visible(False)
 
     fig.suptitle(f"Wealth trajectories: GLM vs. homogeneous Poisson baseline "
                  f"({len(results['strong']['log_W_reps'])} reps per cell)"
-                 f"{title_tag}",
-                 fontsize=11)
+                 f"{title_tag}")
     fig.tight_layout()
-    fig.savefig(out_path, dpi=150)
-    plt.close(fig)
+    _save_figure(fig, out_path)
 
 
 def plot_tuning_triple(results, basis, *, bin_size, out_path, which):
@@ -421,7 +502,7 @@ def plot_tuning_triple(results, basis, *, bin_size, out_path, which):
     to overlay on the (always train-fit) GLM curve."""
     assert which in ("train", "test")
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4), sharey=False)
+    fig, axes = plt.subplots(1, 3, figsize=(16, 4.5), sharey=False)
 
     for ax, (key, color, title_prefix) in zip(
         axes,
@@ -447,14 +528,13 @@ def plot_tuning_triple(results, basis, *, bin_size, out_path, which):
         ax.set_xlabel("Head direction (rad)")
         ax.set_ylabel("Rate (Hz)")
         ax.set_title(f"{title_prefix}: cell {cell_id}")
-        ax.legend(frameon=False, fontsize=9)
+        ax.legend(frameon=False)
         ax.spines[["top", "right"]].set_visible(False)
 
     fig.suptitle(f"Empirical tuning on {which} set vs. GLM fit "
-                 f"(fit on train set)", fontsize=11)
+                 f"(fit on train set)")
     fig.tight_layout()
-    fig.savefig(out_path, dpi=150)
-    plt.close(fig)
+    _save_figure(fig, out_path)
 
 
 # ---------------------------------------------------------------------------
@@ -469,10 +549,10 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--min-spikes", type=int, default=200,
                         help="Exclude cells with fewer wake-epoch spikes.")
-    parser.add_argument("--xmax-strong", type=int, default=250,
+    parser.add_argument("--xmax-strong", type=int, default=100,
                         help="x-axis upper limit (bins) for the strong-cell "
                              "panel of the wealth figure.")
-    parser.add_argument("--xmax-mid", type=int, default=8000,
+    parser.add_argument("--xmax-mid", type=int, default=2000,
                         help="x-axis upper limit (bins) for the "
                              "intermediate-cell panel of the wealth figure.")
     parser.add_argument("--xmax-weak", type=int, default=0,
@@ -610,6 +690,18 @@ def main():
         alpha=args.alpha, bin_size=args.bin_size,
         out_path=FIG_DIR / "wealth_alpha_normalized.pdf",
         y_unit="alpha_rejections",
+        x_in_seconds=True,
+        xmax_strong=args.xmax_strong,
+        xmax_mid=args.xmax_mid,
+        xmax_weak=xmax_weak,
+    )
+    plot_wealth(
+        results_for_plot,
+        alpha=args.alpha, bin_size=args.bin_size,
+        out_path=FIG_DIR / "wealth_alpha_anticipated.pdf",
+        y_unit="alpha_rejections",
+        x_in_seconds=True,
+        show_anticipated=True,
         xmax_strong=args.xmax_strong,
         xmax_mid=args.xmax_mid,
         xmax_weak=xmax_weak,
@@ -626,10 +718,10 @@ def main():
         out_path=FIG_DIR / "tuning_curves_test.pdf",
         which="test",
     )
-    print(f"  wrote {FIG_DIR}/wealth_trajectory.pdf")
-    print(f"  wrote {FIG_DIR}/wealth_alpha_normalized.pdf")
-    print(f"  wrote {FIG_DIR}/tuning_curves_train.pdf")
-    print(f"  wrote {FIG_DIR}/tuning_curves_test.pdf")
+    for name in ("wealth_trajectory", "wealth_alpha_normalized",
+                 "wealth_alpha_anticipated",
+                 "tuning_curves_train", "tuning_curves_test"):
+        print(f"  wrote {FIG_DIR}/{name}.pdf  +  {WEB_FIG_DIR}/{name}.png")
 
     # ----------------------------------------------------------------------
     # Calibration check: empirical type-I error under the TRUE null.

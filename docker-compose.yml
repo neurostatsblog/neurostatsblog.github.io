@@ -22,9 +22,11 @@ services:
       context: ./code/betting
       dockerfile: Dockerfile
     image: neurostatsblog-betting
-    working_dir: /app
+    working_dir: /data/code/betting
     volumes:
-      - ./code/betting:/app
+      # Mount the whole repo so the script can write PNGs into
+      # assets/img/posts/... alongside writing PDFs into code/betting/figures/.
+      - .:/data
       - nemos-cache:/root/.cache
 
 volumes:
