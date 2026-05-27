@@ -28,11 +28,22 @@ kramdown:
 # Enable math rendering
 mathjax: true
 
-# Plugins supported by GitHub Pages
+# Plugins (site is built by GitHub Actions, so we're not limited to the
+# GitHub Pages plugin allowlist).
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
   - jekyll-sitemap
+  - jekyll-archives
+
+# Generate one page per tag at /tags/<slug>/
+jekyll-archives:
+  enabled:
+    - tags
+  layouts:
+    tag: tag-archive
+  permalinks:
+    tag: /tags/:name/
 
 # The github-pages gem enforces safe mode by default, which disables custom
 # files in _plugins/. We disable safe mode locally so the math-block hook
@@ -54,6 +65,8 @@ exclude:
   - code
   - bin
   - pdf
+  - .github
+  - .bundle
 
 # Collections and defaults
 defaults:

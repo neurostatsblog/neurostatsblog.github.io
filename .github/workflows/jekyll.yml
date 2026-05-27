@@ -5,14 +5,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Permissions required by actions/deploy-pages.
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow one concurrent deploy. Don't cancel in-progress runs so they finish
-# uploading their artifact (otherwise the next deploy has nothing to publish).
+# Allow one concurrent deployment; don't cancel an in-progress production deploy.
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -27,7 +25,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
+          ruby-version: "3.3"
           bundler-cache: true   # runs `bundle install` and caches gems
 
       - name: Configure Pages
@@ -37,9 +35,10 @@ jobs:
       - name: Build site
         env:
           JEKYLL_ENV: production
-        run: |
-          bundle exec jekyll build \
-            --baseurl "${{ steps.pages.outputs.base_path }}"
+        run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
+
+      - name: Build search index (Pagefind)
+        run: npx -y pagefind@^1 --site _site
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
