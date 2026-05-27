@@ -5,6 +5,7 @@ subtitle: "A simple way to interpret heldout log-likelihood scores"
 date: 2026-05-27
 version: 1
 last_updated: 2026-05-27
+doi: 10.5281/zenodo.20418561
 toc: true
 changelog:
     - "v1 (2026-05-27): Initial version."

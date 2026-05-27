@@ -24,6 +24,11 @@ layout: default
           {% endfor %}
         </div>
         {% endif %}
+        {% if page.doi %}
+        <div class="post-doi">
+          <a href="https://doi.org/{{ page.doi }}" rel="noopener">DOI: {{ page.doi }}</a>
+        </div>
+        {% endif %}
       </div>
 
       <h1 class="post-full-title" itemprop="headline">{{ page.title }}</h1>

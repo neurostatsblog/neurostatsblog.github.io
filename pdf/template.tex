@@ -188,13 +188,19 @@
   $endif$
   $if(changelog)$
   \vspace{1.0em}%
-  {\footnotesize\itshape Revision history\par}
-  \vspace{0.3em}%
+  \begingroup
+  \setlength{\parskip}{0pt}%
+  {\footnotesize\itshape Revision history\par}%
   {\footnotesize
   $for(changelog)$
   $changelog$\par
   $endfor$
   }
+  \endgroup
+  $endif$
+  $if(doi)$
+  \vspace{0.8em}%
+  {\footnotesize doi: \href{https://doi.org/$doi$}{$doi$}\par}%
   $endif$
   \vspace{1.8em}%
   \endgroup

@@ -449,6 +449,25 @@ button { cursor: pointer; background: none; border: none; }
   flex-wrap: wrap;
 }
 
+.post-doi {
+  font-size: var(--text-xs);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.post-doi a {
+  color: var(--color-text-faint);
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+
+.post-doi a:hover,
+.post-doi a:focus-visible {
+  color: var(--color-primary);
+}
+
 .tag {
   display: inline-block;
   font-size: 0.7rem;
