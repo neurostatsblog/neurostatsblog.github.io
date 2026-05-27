@@ -141,6 +141,33 @@ GitHub Actions rebuilds the site automatically. Changes are live in ~60 seconds.
 
 ---
 
+## Versioning a post
+
+Posts can carry simple version metadata so readers (and future-you) can tell at a glance when a post was last revised and what changed. Three optional YAML fields:
+
+```yaml
+---
+title: "..."
+date: 2026-05-01              # original publication — never change this
+version: 2                    # bump when you make a substantive edit
+last_updated: 2026-05-27      # most recent edit date (shown if differs from `date`)
+changelog:                    # newest first
+  - "v2 (2026-05-27): Added Figure 4 showing anticipated wealth growth."
+  - "v1 (2026-05-01): Initial publication."
+---
+```
+
+How it renders:
+
+- If `last_updated` is set and differs from `date`, the post header shows `<original date> · Updated <new date> (v2)` (the `(vN)` suffix is shown when `version` is set).
+- If `version > 1` but no `last_updated` is given, the header shows just `(vN)`.
+- If `changelog` is provided, a small **Revision history** section appears at the bottom of the post, between the body and the navigation links.
+- Posts without these fields display exactly as before — everything is opt-in.
+
+Convention: bump `version` on substantive edits (added/removed content, fixed an error, added a figure). Don't bump on pure typo fixes — leave those silent.
+
+---
+
 ## Building a post as a PDF
 
 The repo includes a pandoc-based PDF pipeline (XeLaTeX backend) that runs in Docker — no host install of TeX needed.

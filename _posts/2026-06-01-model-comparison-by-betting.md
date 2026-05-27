@@ -2,7 +2,12 @@
 layout: post
 title: "Bits per Spike as a Betting Game"
 subtitle: "A simple way to interpret heldout log-likelihood scores"
-date: 2026-05-01
+date: 2026-05-27
+version: 1
+last_updated: 2026-05-27
+toc: true
+changelog:
+    - "v1 (2026-05-27): Initial version."
 tags: [statistics]
 authors:
   - name: Alex Williams
@@ -280,9 +285,7 @@ $$
 This furnishes an *anytime-valid* hypothesis test of the null $H_0 : P = B$: we may reject $H_0$ at level $\alpha$ as soon as $W_t$ crosses $1/\alpha$, regardless of how many rounds have been played. Unlike classical fixed-sample tests, we are free to peek at the data, stop early, or keep collecting more samples adaptively, all without inflating the type I error rate.
 For example, if we use $\alpha = 0.05$ (as is customary), then we can reject the null hypothesis that $P = B$ if player $Q$'s wealth *ever* exceeds 20.
 
----
-
-### Further Reading
+## Further Reading
 
 Review paper by Ramdas, Grünwald, Vovk, and Shafer (2023). ["Game-Theoretic Statistics and Safe Anytime-Valid Inference."](https://doi.org/10.1214/23-STS894) *Statist. Sci.* 38 (4) 576-601. 
 
@@ -292,12 +295,11 @@ YouTube Tutorial Lectures by Ramdas, "A Martingale Theory of Evidence"
 [(Part II)](https://youtu.be/H8nviC_cDAE?si=QHnWGhYtgJ2qzVga)
 [(Part III)](https://youtu.be/LNHU4JLOnQc?si=ngPutFxWo2U67Dsw)
 
-Textbook Ramdas and Wang (2025). ["Hypothesis Testing With E-Values."](https://www.stat.cmu.edu/~aramdas/ebook-final.pdf)
+Textbook by Ramdas and Wang (2025). ["Hypothesis Testing With E-Values."](https://www.stat.cmu.edu/~aramdas/ebook-final.pdf)
 
 [^kelly]: This interpretation of KL divergence is due to JL Kelly Jr. in a [tech report from 1956](https://www.princeton.edu/~wbialek/rome/refs/kelly_56.pdf). The principle that the player should choose their bet to maximize the term in the exponent appearing in \eqref{eq:q-wealth-growth} is named after him---it is known as the [Kelly criterion](https://en.wikipedia.org/wiki/Kelly_criterion) in quantitative finance.
 
-[^martingale]: For those who appreciate jargon, we call $(M\_t)\_{t \geq 0}$ a *supermartingale* if it satisfies $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$.
-In the stricter case where the inequality is saturated, i.e. $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] = M_{t-1}$, we call $(M\_t)\_{t \geq 0}$ a [*martingale*](https://en.wikipedia.org/wiki/Martingale_(probability_theory)). Ville's inequality says that all nonnegative supermartingales (and martingales) are upper bounded for all time with high probability.
+[^martingale]: For those who appreciate jargon, we call $(M\_t)\_{t \geq 0}$ a *supermartingale* if it satisfies $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$. In the stricter case where the inequality is saturated, i.e. $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] = M_{t-1}$, we call $(M\_t)\_{t \geq 0}$ a [*martingale*](https://en.wikipedia.org/wiki/Martingale_(probability_theory)). Ville's inequality says that all nonnegative supermartingales (and martingales) are upper bounded for all time with high probability.
 
 [^expectation-derivation]: Concretely, $\mathbb{E}_{X \sim B} \left[ \frac{q(X)}{b(X)} \right] = \int \frac{q(x)b(x)}{b(x)} dx =  \int q(x) dx = 1$.
 
@@ -376,6 +378,8 @@ $$
 \pi(C) = \sum_{i=1}^n r_i \pi(\delta_i) = \mathbb{E}_{X \sim B}  \left [ C(X) \right ]
 $$
 confirming our claim that the price of a contract is given by the expected payoff of the contract under an appropriate distribution $B$.
+
+--------
 
 ## Supplementary Note 2
 

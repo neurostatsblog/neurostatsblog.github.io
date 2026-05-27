@@ -72,7 +72,7 @@
   --header-height: 60px;
 
   /* Fonts */
-  --font-display: 'Spectral', Georgia, 'Times New Roman', serif;
+  --font-display: 'Inter', 'Helvetica Neue', Arial, sans-serif;
   --font-body:    'Inter', 'Helvetica Neue', Arial, sans-serif;
   --font-mono:    'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
 }
@@ -424,6 +424,16 @@ button { cursor: pointer; background: none; border: none; }
 }
 
 .post-date {
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* "· Updated <date> (vN)" — sits inline next to .post-date */
+.post-updated {
   font-size: var(--text-xs);
   color: var(--color-text-faint);
   font-family: var(--font-body);
@@ -789,6 +799,69 @@ button { cursor: pointer; background: none; border: none; }
   border: none;
   border-top: 1px solid var(--color-divider);
   margin-block: var(--space-10);
+}
+
+/* Table of contents (rendered when YAML has `toc: true`; the heading
+   above the list has class .no_toc to keep it out of its own TOC). */
+.post-body h2.no_toc {
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+  margin-top: 0;
+  margin-bottom: var(--space-2);
+  color: var(--color-text-muted);
+}
+#markdown-toc {
+  margin: 0 0 var(--space-8) 0;
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-surface-offset);
+  border-radius: var(--radius-md);
+  font-size: 0.9em;
+  list-style: none;
+}
+#markdown-toc ul {
+  list-style: none;
+  padding-left: var(--space-5);
+  margin-top: var(--space-1);
+}
+#markdown-toc li {
+  margin-top: var(--space-1);
+}
+#markdown-toc a {
+  text-decoration: none;
+  color: var(--color-text-muted);
+}
+#markdown-toc a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* Revision history block (rendered from page.changelog YAML).
+   Sits between the post header and the body — bottom border separates
+   it from the body content that follows. */
+.post-changelog {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-code-border);
+  font-size: 0.9em;
+  color: var(--color-text-muted);
+}
+.post-changelog h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  margin-bottom: var(--space-3);
+  color: var(--color-text);
+}
+.post-changelog ul {
+  margin: 0;
+  padding-left: var(--space-5);
+  list-style: disc;
+}
+.post-changelog li {
+  margin-top: var(--space-2);
 }
 
 /* ── 10. Post Footer / Navigation ──────────────────────────── */

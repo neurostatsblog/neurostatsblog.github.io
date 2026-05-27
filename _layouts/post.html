@@ -9,6 +9,13 @@ layout: default
         <time class="post-date" datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">
           {{ page.date | date: "%B %-d, %Y" }}
         </time>
+        {% if page.last_updated and page.last_updated != page.date %}
+        <span class="post-updated">
+          · Updated <time datetime="{{ page.last_updated | date_to_xmlschema }}" itemprop="dateModified">{{ page.last_updated | date: "%B %-d, %Y" }}</time>{% if page.version %} (v{{ page.version }}){% endif %}
+        </span>
+        {% elsif page.version and page.version != 1 %}
+        <span class="post-updated">(v{{ page.version }})</span>
+        {% endif %}
         {% if page.tags.size > 0 %}
         <div class="post-tags">
           {% for tag in page.tags %}
@@ -42,6 +49,15 @@ layout: default
       </div>
       {% endif %}
     </header>
+
+    {% if page.changelog %}
+    <section class="post-changelog">
+      <h3>Revision history</h3>
+      <ul>
+        {% for entry in page.changelog %}<li>{{ entry }}</li>{% endfor %}
+      </ul>
+    </section>
+    {% endif %}
 
     <div class="post-body" itemprop="articleBody">
       {{ content }}

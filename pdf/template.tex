@@ -48,6 +48,16 @@
 % fit the full box; with it the smaller of the two constraints wins and
 % the image is scaled to its natural aspect ratio inside that box.
 \setkeys{Gin}{keepaspectratio}
+% Force figures to appear at the point they're declared in the source,
+% rather than floating to a "convenient" page break. This keeps figure
+% placement tightly coupled to the prose that references them.
+\usepackage{float}
+\floatplacement{figure}{H}
+% Narrower, smaller captions read better than the default — keeps them
+% from running the full text width when the figure caption is long.
+\usepackage{caption}
+\captionsetup{width=0.88\textwidth, font=small,
+              labelfont=bf, labelsep=period}
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{array}
@@ -61,12 +71,14 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0pt}
 \fancyhead[L]{\color{nsbmuted}\footnotesize neurostatsblog.github.io$if(date)$\;\textperiodcentered\;$date$$endif$}
+\fancyhead[R]{\color{nsbmuted}\footnotesize\itshape $if(short_title)$$short_title$$else$$title$$endif$}
 \fancyfoot[C]{\color{nsbmuted}\footnotesize\thepage}
 % First page should also carry the header
 \fancypagestyle{plain}{%
   \fancyhf{}%
   \renewcommand{\headrulewidth}{0pt}%
   \fancyhead[L]{\color{nsbmuted}\footnotesize neurostatsblog.github.io$if(date)$\;\textperiodcentered\;$date$$endif$}%
+  \fancyhead[R]{\color{nsbmuted}\footnotesize\itshape $if(short_title)$$short_title$$else$$title$$endif$}%
   \fancyfoot[C]{\color{nsbmuted}\footnotesize\thepage}%
 }
 
@@ -174,9 +186,15 @@
   $endfor$
   \par}
   $endif$
-  $if(date)$
+  $if(changelog)$
   \vspace{1.0em}%
-  {\small\itshape $date$\par}%
+  {\footnotesize\itshape Revision history\par}
+  \vspace{0.3em}%
+  {\footnotesize
+  $for(changelog)$
+  $changelog$\par
+  $endfor$
+  }
   $endif$
   \vspace{1.8em}%
   \endgroup
