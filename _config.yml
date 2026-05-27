@@ -61,6 +61,10 @@ exclude:
   - Dockerfile
   - docker-compose.yml
   - vendor
+  - notes
+  - code
+  - bin
+  - pdf
   - .github
   - .bundle
 

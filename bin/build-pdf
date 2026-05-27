@@ -45,6 +45,7 @@ build_one() {
     --template=/data/pdf/template.tex \
     --lua-filter=/data/pdf/unwrap-ams.lua \
     --lua-filter=/data/pdf/callouts.lua \
+    --lua-filter=/data/pdf/fix_image_paths.lua \
     --output=/data/pdfs/${slug}.pdf \
     /data/${input_path}"
 }
