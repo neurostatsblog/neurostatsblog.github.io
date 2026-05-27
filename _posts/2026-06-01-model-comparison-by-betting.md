@@ -35,7 +35,7 @@ We assume these samples are independent and identically distributed according to
 Our hope is that $Q$ is in some sense "closer" to the true distribution $P$ than the baseline model $B$.
 
 For simplicity, we'll assume that $Q$ and $B$ have strictly positive probability density or mass functions $q(x)>0$ and $b(x)>0$.
-Intuitively, this allows us to compute *likelihood ratios*, $q(X)/b(X)$ for $X \sim P$, without having to worry about divide-by-zero errors.
+Intuitively, this allows us to compute *likelihood ratios*, $q(X)/b(X)$ for $X \sim P$, without having to worry about divide-by-zero errors.[^divide-by-zero]
 
 Given an infinite amount of heldout data, a nice measure of performance is the expected log-likelihood ratio:
 $$
@@ -98,7 +98,7 @@ This is the behavior we hope to see whenever a model offers no genuine improveme
 
 By the end of this post, we'll see that expected log likelihood ratios describe the rate of wealth growth.
 For example, $1 / \mathcal{L}_2$ describes the number of rounds of betting needed (on average) to double the player's wealth.
-Similarly, if we normalize by time bin size by computing $\Delta / \mathcal{L}_2$, we obtain an estimate of how much heldout data we need (in recording duration) to double the player's wealth.
+Similarly, if we normalize by time bin size, computing $\Delta / \mathcal{L}_2$, we obtain an estimate of how much heldout data we need (in recording duration) to double the player's wealth.
 
 We can also connect this to a null hypothesis test with significance level $\alpha$.
 It turns out that if the player ever generates more than $1/\alpha$ units of wealth, we can reject the null hypothesis that the true distribution, $P$, is equal to the baseline model, $B$, with type-I error rate less than $\alpha$.
@@ -112,6 +112,10 @@ The units of the y-axis now correspond to the number of times the player has acc
 For the strong cell (*left*) that timescale is around 120 ms; for the intermediate cell it is around 11 seconds; for the weak cell the trajectories never cross the threshold, and we therefore fail to reject the null.
 
 ![The same wealth trajectories as Figure 2, now plotted in units of $\log_{1/\alpha} W_t$ with $\alpha = 0.05$. The dashed red line at $y=1$ marks the wealth required to reject the null at level $\alpha$. The slope of each trajectory is the rate at which the player accumulates rejection-worth of evidence.](/assets/img/posts/2026-06-01-betting/wealth_alpha_normalized.png)
+
+A common alternative normalization is *bits per spike*, the metric mentioned at the top of the post.
+If $\bar\lambda_b$ is the baseline's expected spike count per bin, then $\text{bits/spike} = \mathcal{L}_2 / \bar\lambda_b$ coincides with the player's wealth growth per spike observed, rather than per bin elapsed.
+Normalizing by the number of spikes is potentially useful when comparing models fit to neurons with very different firing rates, but for the rest of this post I'll stick with bits per bin and the closely related bits per second, since the betting game is naturally indexed by time bins of the recording.
 
 Now that we've sketched some results, it's time to make this picture rigorous.
 Specifically, we want to (1) define exactly how each round of betting works, (2) explain the optimal strategy that player $Q$ can implement, and (3) understand what the significance threshold line in the figure means in terms of a formal hypothesis test.
@@ -160,7 +164,7 @@ Therefore, for the rest of this post we will focus on the simplified wealth proc
 
 <div class="callout callout-theorem">
 <p><strong>Simplified wealth process.</strong> 
-Assuming that the player purchases nonnegative contracts $S(x) \geq 0$ of unit price, 
+Assuming that the player purchases positive contracts $S(x) > 0$ of unit price, 
 $$
 \begin{align}
 \mathbb{E}_{X \sim B} \big [ \, S(X) \, \big ] = 1 \label{eq:unit-price-constraint}
@@ -247,12 +251,12 @@ $$
 $$
 which is precisely the KL divergence, $D_{\mathrm{KL}}(Q \,\Vert\, B)$.[^kelly]
 
-Figure 4 shows the same wealth trajectories as in Figure 3 with the expected rate of wealth growth, given by $D_{\mathrm{KL}}(Q \,\Vert\, B)$, shown overlaid as a dark black line.
+Figure 4 shows the same wealth trajectories as in Figure 3 with the expected rate of wealth growth, given by $D_{\mathrm{KL}}(Q \,\Vert\, B)$, overlaid as a dark black line.
 For the strong and intermediate cells (*left* and *middle* panels), the anticipated and realized growth rates agree, indicating that the GLM model is well-calibrated on this dataset. 
 For the weak cell, the anticipated line climbs gradually above zero while the realized trajectories drift slightly below.
 This is suggestive of overfitting: $Q$ believes it has a tiny edge that doesn't actually exist on heldout data.
 
-![Same wealth trajectories as Figure 3, now with the player's anticipated rate of wealth growth overlaid as a dashed black line. The slope of the dashed line is $D_{\mathrm{KL}}(Q \,\Vert\, B)$ per round of betting, averaged across the ten train/test splits. For the strong and intermediate cells, the anticipated and realized trajectories agree closely. For the weak cell, the anticipated line drifts slightly above zero while the realized trajectories drift slightly below --- a small but real signature of overfitting on the training data.](/assets/img/posts/2026-06-01-betting/wealth_alpha_anticipated.png)
+![Same wealth trajectories as Figure 3, now with the player's anticipated rate of wealth growth overlaid as a black line. The slope of the line is $D_{\mathrm{KL}}(Q \,\Vert\, B)$ per round of betting, averaged across the ten train/test splits. For the strong and intermediate cells, the anticipated and realized trajectories agree closely. For the weak cell, the anticipated line drifts slightly above zero while the realized trajectories drift slightly below --- a small but real signature of overfitting on the training data.](/assets/img/posts/2026-06-01-betting/wealth_alpha_anticipated.png)
 
 ## Connection to Hypothesis Testing
 
@@ -297,6 +301,8 @@ YouTube Tutorial Lectures by Ramdas, "A Martingale Theory of Evidence"
 
 Textbook by Ramdas and Wang (2025). ["Hypothesis Testing With E-Values."](https://www.stat.cmu.edu/~aramdas/ebook-final.pdf)
 
+[^divide-by-zero]: It is possible to make the math work without making this assumption. Generally, this would let us turn "$>$ relations" into "$\geq$ relations" and likewise turn "$\leq$ relations" into "$<$ relations". However, for simplicity we just stick to strict inequalities for the purpose of this post.
+
 [^kelly]: This interpretation of KL divergence is due to JL Kelly Jr. in a [tech report from 1956](https://www.princeton.edu/~wbialek/rome/refs/kelly_56.pdf). The principle that the player should choose their bet to maximize the term in the exponent appearing in \eqref{eq:q-wealth-growth} is named after him---it is known as the [Kelly criterion](https://en.wikipedia.org/wiki/Kelly_criterion) in quantitative finance.
 
 [^martingale]: For those who appreciate jargon, we call $(M\_t)\_{t \geq 0}$ a *supermartingale* if it satisfies $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$. In the stricter case where the inequality is saturated, i.e. $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] = M_{t-1}$, we call $(M\_t)\_{t \geq 0}$ a [*martingale*](https://en.wikipedia.org/wiki/Martingale_(probability_theory)). Ville's inequality says that all nonnegative supermartingales (and martingales) are upper bounded for all time with high probability.
@@ -325,7 +331,7 @@ $$
 r_i = C(i) ~,
 \end{equation}
 $$
-and $\delta_1, \dots, \delta_n$ are contracts that pays off one unit of wealth if the outcome is $x = i$,
+and $\delta_1, \dots, \delta_n$ are contracts that pay off one unit of wealth if the outcome is $x = i$,
 $$
 \delta_i(x) = \begin{cases}
 1 & x = i \\
@@ -387,7 +393,7 @@ We prove that the optimization problem stated in \eqref{eq:kelly-criterion} is s
 
 The argument relies on a useful reparameterization. 
 Let $r(x) = b(x) \, S(x)$ and note that $r(x)$ is a probability density.
-Indeed, $r(x) \geq 0$ since both $b$ and $S$ are nonnegative, and
+Indeed, $r(x) > 0$ since both $b$ and $S$ are strictly positive, and
 $$
 \int r(x) \, dx \,=\, \int b(x) \, S(x) \, dx \,=\, \mathbb{E}_{X \sim B} [ S(X) ] \,=\, \pi(S) \, = \, 1
 $$
