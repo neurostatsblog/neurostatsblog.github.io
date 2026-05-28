@@ -19,6 +19,7 @@ end
 gem "csv"
 gem "base64"
 gem "logger"
+gem "bigdecimal"   # needed by liquid under Ruby 3.4+
 gem "webrick", "~> 1.8"
 gem "tzinfo", ">= 1", "< 3"
 gem "tzinfo-data", platforms: [:mingw, :x64_mingw, :mswin, :jruby]
