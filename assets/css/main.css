@@ -566,10 +566,10 @@ a.tag:focus-visible {
 /* ── 9. Post Body (reading typography) ─────────────────────── */
 .post-body {
   font-family: var(--font-display);
-  font-size: clamp(1.05rem, 1rem + 0.25vw, 0.8rem);
-  line-height: 1.75;
+  font-size: 1.15rem;
+  line-height: 1.7;
   color: var(--color-text);
-  font-weight: 300;
+  font-weight: 400;
   display: flex;
   flex-direction: column;
 }
@@ -788,10 +788,11 @@ a.tag:focus-visible {
 }
 
 .post-body figcaption {
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
+  line-height: 1.55;
   color: var(--color-text);
   font-family: var(--font-body);
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
   font-style: italic;
   text-align: center;
 }
@@ -891,13 +892,25 @@ a.tag:focus-visible {
   margin-top: var(--space-2);
 }
 
-/* ── Citation block (BibTeX disclosure) ─────────────────────── */
-.post-citation {
+/* ── Post action buttons (cite, view as pdf) ────────────────── */
+.post-actions {
   margin-top: var(--space-4);
   margin-bottom: var(--space-8);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
 }
 
-.post-citation > summary {
+/* Let the <details>'s summary + body participate directly in the
+   flex layout, so the summary can sit next to the PDF link and the
+   bibtex body can wrap to its own row when open. */
+.post-citation { display: contents; }
+.post-citation > summary { order: 1; }
+.post-pdf-link { order: 2; }
+
+.post-citation > summary,
+.post-pdf-link {
   display: inline-block;
   cursor: pointer;
   list-style: none;
@@ -910,6 +923,7 @@ a.tag:focus-visible {
   background: var(--color-primary-highlight);
   padding: 0.45em 0.9em;
   border-radius: var(--radius-sm);
+  text-decoration: none;
   transition: background 0.15s ease, color 0.15s ease;
   user-select: none;
 }
@@ -924,15 +938,25 @@ a.tag:focus-visible {
 }
 .post-citation[open] > summary::before { content: "− "; }
 
+.post-pdf-link::before {
+  content: "↗ ";
+  display: inline;
+  font-weight: 600;
+}
+
 .post-citation > summary:hover,
-.post-citation > summary:focus-visible {
+.post-citation > summary:focus-visible,
+.post-pdf-link:hover,
+.post-pdf-link:focus-visible {
   background: var(--color-primary);
   color: var(--color-bg, #fff);
 }
 
 .post-citation-body {
   position: relative;
-  margin-top: var(--space-3);
+  order: 3;
+  flex-basis: 100%;
+  width: 100%;
 }
 
 .post-citation-body pre {

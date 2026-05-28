@@ -165,7 +165,7 @@ Therefore, for the rest of this post we will focus on the simplified wealth proc
 
 <div class="callout callout-theorem">
 <p><strong>Simplified wealth process.</strong> 
-Assuming that the player purchases positive contracts $S(x) > 0$ of unit price, 
+Assuming that the player purchases positive contracts $S(x) > 0$ of unit price, i.e.
 $$
 \begin{align}
 \mathbb{E}_{X \sim B} \big [ \, S(X) \, \big ] = 1 \label{eq:unit-price-constraint}

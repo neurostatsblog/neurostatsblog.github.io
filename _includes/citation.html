@@ -9,22 +9,32 @@
 {%- assign auto_key = last_name | append: year | append: "_" | append: slug_first -%}
 {%- assign cite_key = page.bibtex_key | default: auto_key -%}
 {%- assign post_url = page.url | absolute_url -%}
+{%- if page.doi -%}
+  {%- assign cite_url = "https://doi.org/" | append: page.doi -%}
+{%- else -%}
+  {%- assign cite_url = post_url -%}
+{%- endif -%}
 {%- assign lb = "{" -%}
 {%- assign rb = "}" -%}
-<details class="post-citation">
-  <summary>Cite this post</summary>
-  <div class="post-citation-body">
-    <button type="button" class="post-citation-copy" data-citation-copy aria-label="Copy BibTeX to clipboard">Copy</button>
+<div class="post-actions">
+  <details class="post-citation">
+    <summary>Cite this post</summary>
+    <div class="post-citation-body">
+      <button type="button" class="post-citation-copy" data-citation-copy aria-label="Copy BibTeX to clipboard">Copy</button>
 <pre><code class="language-bibtex" data-citation-bibtex>@misc{{ lb }}{{ cite_key }},
   author       = {{ lb }}{{ first_author }}{{ rb }},
   title        = {{ lb }}{{ page.title }}{{ rb }},
   year         = {{ lb }}{{ year }}{{ rb }},
-  howpublished = {{ lb }}\url{{ lb }}{{ post_url }}{{ rb }}{{ rb }},{% if page.doi %}
+  howpublished = {{ lb }}\url{{ lb }}{{ cite_url }}{{ rb }}{{ rb }},{% if page.doi %}
   doi          = {{ lb }}{{ page.doi }}{{ rb }},{% endif %}
   note         = {{ lb }}{{ site.title }}{{ rb }},
 {{ rb }}</code></pre>
-  </div>
-</details>
+    </div>
+  </details>
+  {% if page.doi %}
+  <a class="post-pdf-link" href="https://doi.org/{{ page.doi }}" target="_blank" rel="noopener">View as PDF</a>
+  {% endif %}
+</div>
 <script>
 (function () {
   var btns = document.querySelectorAll('[data-citation-copy]');
