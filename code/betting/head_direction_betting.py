@@ -45,16 +45,20 @@ import pynapple as nap
 THIS_DIR = Path(__file__).resolve().parent
 FIG_DIR = THIS_DIR / "figures"
 
-# Bump default font sizes across all figures (blog post + PDF both benefit
-# from larger labels). Per-call fontsize args override these as needed.
+# Bump default font sizes + line widths across all figures (blog post +
+# PDF both benefit from larger labels). Per-call fontsize args override
+# these as needed.
 plt.rcParams.update({
-    "font.size":         12,
-    "axes.titlesize":    13,
-    "axes.labelsize":    13,
-    "xtick.labelsize":   11,
-    "ytick.labelsize":   11,
-    "legend.fontsize":   11,
-    "figure.titlesize":  14,
+    "font.size":         15,
+    "axes.titlesize":    17,
+    "axes.labelsize":    16,
+    "xtick.labelsize":   14,
+    "ytick.labelsize":   14,
+    "legend.fontsize":   14,
+    "figure.titlesize":  18,
+    "axes.linewidth":    1.2,
+    "xtick.major.width": 1.2,
+    "ytick.major.width": 1.2,
 })
 # Mirror each PDF as a PNG inside the Jekyll asset tree so the post can
 # embed the figures directly (web markdown wants raster images served from
@@ -409,8 +413,7 @@ def plot_wealth(results, *, alpha, bin_size, out_path, y_unit="bits",
         log_arecip   = np.log(1.0 / alpha)
         transform    = lambda lw: lw / log_arecip
         threshold    = 1.0
-        ylabel       = (fr"Cumulative $\log_{{1/\alpha}} W_t$"
-                        fr"  (α-rejections, α={alpha})")
+        ylabel       = fr"Cumulative $\log_{{1/\alpha}} W_t$"
         rate_label   = r"$\alpha$-rej/s"
         unit_factor  = 1.0 / log_arecip
         time_divisor = bin_size     # per-second
@@ -443,7 +446,7 @@ def plot_wealth(results, *, alpha, bin_size, out_path, y_unit="bits",
                 m = t <= x_max
                 t, y = t[m], y[m]
             x_plot = t * bin_size if x_in_seconds else t
-            ax.plot(x_plot, y, color=color, lw=1.0, alpha=trajectory_alpha)
+            ax.plot(x_plot, y, color=color, lw=1.6, alpha=trajectory_alpha)
 
         # Optional: anticipated wealth (under P=Q) — straight reference
         # line through origin with slope = mean per-bin
@@ -459,12 +462,12 @@ def plot_wealth(results, *, alpha, bin_size, out_path, y_unit="bits",
             ant_line_y = transform(ant_line_nats)
             ant_x = t_line * bin_size if x_in_seconds else t_line
             ant_rate_in_unit = ant_slope_nats / time_divisor * unit_factor
-            ax.plot(ant_x, ant_line_y, color="black", ls="-", lw=2, alpha=0.8,
-                    label=fr"anticipated ($D_{{\mathrm{{KL}}}}(Q \,\Vert\, B)$)")
+            ax.plot(ant_x, ant_line_y, color="black", ls="-", lw=2.5, alpha=0.85,
+                    label=fr"anticipated")
 
-        ax.axhline(threshold, color="red", ls=":", lw=2,
-                   label=fr"reject @ $\alpha={alpha}$", alpha=0.5)
-        ax.axhline(0, color="red", lw=2, alpha=0.5)
+        ax.axhline(threshold, color="red", ls=":", lw=2.5,
+                   label=fr"reject @ $\alpha={alpha}$", alpha=0.55)
+        ax.axhline(0, color="red", lw=2.5, alpha=0.55)
 
         finals = np.array([lw[-1] for lw in log_W_reps])  # nats
         rate = (finals.mean() / n_bins_full
@@ -476,7 +479,7 @@ def plot_wealth(results, *, alpha, bin_size, out_path, y_unit="bits",
         if show_anticipated:
             title_line2 = (f"actual / anticipated: "
                            f"{rate:+.2f} / {ant_rate_in_unit:+.2f} "
-                           f"{rate_label}  ({n_rej}/{n_reps} reject)")
+                           f"{rate_label}")
         else:
             title_line2 = (f"{rate:+.3f} {rate_label}  "
                            f"({n_rej}/{n_reps} reject)")
@@ -520,11 +523,11 @@ def plot_tuning_triple(results, basis, *, bin_size, out_path, which):
                        / bin_size)
 
         ax.plot(hd_centers, rate_emp_hz, "o", color="black",
-                alpha=0.5, ms=4, label=f"empirical ({which})")
-        ax.plot(hd_grid, rate_glm_hz, color=color, lw=2,
-                label="GLM fit (Q, trained)")
+                alpha=0.55, ms=6, label=f"empirical")
+        ax.plot(hd_grid, rate_glm_hz, color=color, lw=2.8,
+                label="GLM Q")
         ax.axhline(res["lambda_b"] / bin_size, color="gray", ls="--",
-                   lw=1, label=f"baseline B ({res['lambda_b']/bin_size:.1f} Hz)")
+                   lw=1.8, label=f"baseline B")
         ax.set_xlabel("Head direction (rad)")
         ax.set_ylabel("Rate (Hz)")
         ax.set_title(f"{title_prefix}: cell {cell_id}")

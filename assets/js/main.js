@@ -44,4 +44,52 @@
     }, { passive: true });
   }
 
+  // ── Figure lightbox (click to enlarge) ────────────────────
+  var figureImgs = document.querySelectorAll('.post-body figure img');
+  if (figureImgs.length) {
+    var overlay = null;
+
+    function closeOverlay() {
+      if (!overlay) return;
+      overlay.classList.remove('is-open');
+      // Allow CSS transition before removal
+      setTimeout(function () {
+        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        overlay = null;
+      }, 180);
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKeydown);
+    }
+
+    function onKeydown(e) {
+      if (e.key === 'Escape') closeOverlay();
+    }
+
+    function openOverlay(src, alt) {
+      overlay = document.createElement('div');
+      overlay.className = 'lightbox-overlay';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', alt || 'Enlarged figure');
+      var img = document.createElement('img');
+      img.src = src;
+      if (alt) img.alt = alt;
+      overlay.appendChild(img);
+      document.body.appendChild(overlay);
+      document.body.style.overflow = 'hidden';
+      // Force layout then add class to trigger fade-in
+      void overlay.offsetWidth;
+      overlay.classList.add('is-open');
+      overlay.addEventListener('click', closeOverlay);
+      document.addEventListener('keydown', onKeydown);
+    }
+
+    figureImgs.forEach(function (img) {
+      img.classList.add('is-zoomable');
+      img.addEventListener('click', function () {
+        openOverlay(img.currentSrc || img.src, img.alt);
+      });
+    });
+  }
+
 })();
