@@ -11,7 +11,7 @@ changelog:
     - "v1 (2026-05-27): Initial version."
 tags: [statistics]
 authors:
-  - name: Alex Williams
+  - name: Alex H Williams
     affiliation: New York University
     email: alex.h.williams@nyu.edu
 reviewers: ["n/a"]

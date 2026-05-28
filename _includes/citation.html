@@ -1,0 +1,54 @@
+{%- comment -%}
+  Renders a BibTeX citation block for a post. Pulls author/date/url/doi from
+  the post's YAML front matter; gracefully omits the doi field when absent.
+{%- endcomment -%}
+{%- assign first_author = page.authors[0].name | default: page.author | default: site.author.name -%}
+{%- assign last_name = first_author | split: " " | last | downcase -%}
+{%- assign year = page.date | date: "%Y" -%}
+{%- assign slug_first = page.slug | split: "-" | first -%}
+{%- assign auto_key = last_name | append: year | append: "_" | append: slug_first -%}
+{%- assign cite_key = page.bibtex_key | default: auto_key -%}
+{%- assign post_url = page.url | absolute_url -%}
+{%- assign lb = "{" -%}
+{%- assign rb = "}" -%}
+<details class="post-citation">
+  <summary>Cite this post</summary>
+  <div class="post-citation-body">
+    <button type="button" class="post-citation-copy" data-citation-copy aria-label="Copy BibTeX to clipboard">Copy</button>
+<pre><code class="language-bibtex" data-citation-bibtex>@misc{{ lb }}{{ cite_key }},
+  author       = {{ lb }}{{ first_author }}{{ rb }},
+  title        = {{ lb }}{{ page.title }}{{ rb }},
+  year         = {{ lb }}{{ year }}{{ rb }},
+  howpublished = {{ lb }}\url{{ lb }}{{ post_url }}{{ rb }}{{ rb }},{% if page.doi %}
+  doi          = {{ lb }}{{ page.doi }}{{ rb }},{% endif %}
+  note         = {{ lb }}{{ site.title }}{{ rb }},
+{{ rb }}</code></pre>
+  </div>
+</details>
+<script>
+(function () {
+  var btns = document.querySelectorAll('[data-citation-copy]');
+  btns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var pre = btn.parentElement.querySelector('[data-citation-bibtex]');
+      if (!pre) return;
+      var text = pre.textContent;
+      var done = function () {
+        var orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = orig; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () {});
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+})();
+</script>
