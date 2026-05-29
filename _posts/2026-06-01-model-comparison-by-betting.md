@@ -3,12 +3,13 @@ layout: post
 title: "Bits per Spike as a Betting Game"
 subtitle: "A simple way to interpret heldout log-likelihood scores"
 date: 2026-05-27
-version: 1
+version: 2
 last_updated: 2026-05-27
 doi: 10.5281/zenodo.20418561
 toc: true
 changelog:
     - "v1 (2026-05-27): Initial version."
+    - "v2 (2026-05-28): Added time to significance."
 tags: [statistics]
 authors:
   - name: Alex H Williams
@@ -48,15 +49,17 @@ $$
 Note that the expectation is computed under $P$. 
 Since $P$ is unknown in real world situations, we can estimate the expression above by holding out a test set with $T$ data samples and approximating the expectation with an empirical average:
 $$
+\begin{equation}
 \mathcal{L} \approx \widehat{\mathcal{L}} = \frac{1}{T} \sum_{t=1}^T \log q(X_t)/ b(X_t)  = \frac{1}{T} \sum_{t=1}^T \Big [ \log q(X_t) - \log b(X_t) \Big ] 
 \label{eq:empirical-log-likelihood-ratio}
+\end{equation}
 $$
 
 We have thus far used natural logarithms, but substituting base-2 logarithms can aid interpretation.
 By the change of base formula, $\mathcal{L}_2 = \mathcal{L} / \log(2)$ is the expected base-2 log likelihood.
 
 Even more intriguingly, we will be able to draw a connection to null hypothesis testing at significance threshold $\alpha$ (for example, $\alpha = 0.05$).
-It turns out that the expected base-$(1/\alpha)$ log likelihood, $\mathcal{L}_{1/\alpha} = -\mathcal{L} / \log(\alpha)$, will have a very satisfying interpretation.
+It turns out that the expected base-$(1/\alpha)$ log likelihood, $\mathcal{L}_{1/\alpha} = -\mathcal{L} / \log(\alpha)$, will have a very satisfying interpretation (see [**Take Home Message**](#take-home-message) at the end of this post).
 
 ## A Demo of the Betting Game
 
@@ -116,7 +119,8 @@ For the strong cell (*left*) that timescale is around 120 ms; for the intermedia
 
 A common alternative normalization is *bits per spike*, the metric mentioned at the top of the post.
 If $\bar\lambda_b$ is the baseline's expected spike count per bin, then $\text{bits/spike} = \mathcal{L}_2 / \bar\lambda_b$ coincides with the player's wealth growth per spike observed, rather than per bin elapsed.
-Normalizing by the number of spikes is potentially useful when comparing models fit to neurons with very different firing rates, but for the rest of this post I'll stick with bits per bin and the closely related bits per second, since the betting game is naturally indexed by time bins of the recording.
+Normalizing by the number of spikes is potentially useful when comparing models fit to neurons with very different firing rates.
+However, since the betting game is naturally indexed by time bins of the recording, the rest of the post will stick to normalizing the log likelihood ratio in units of time.
 
 Now that we've sketched some results, it's time to make this picture rigorous.
 Specifically, we want to (1) define exactly how each round of betting works, (2) explain the optimal strategy that player $Q$ can implement, and (3) understand what the significance threshold line in the figure means in terms of a formal hypothesis test.
@@ -261,8 +265,8 @@ This is suggestive of overfitting: $Q$ believes it has a tiny edge that doesn't 
 
 ## Connection to Hypothesis Testing
 
-The doubling time of wealth is already an appealing interpretation of the expected log likelihood.
-But what makes the betting game framework even more powerful is the following connection to hypothesis testing, due to [Ville's inequality](https://en.wikipedia.org/wiki/Ville%27s_inequality).
+We have not yet drawn a rigorous connection to null hypothesis testing, as promised by the plots in Figures 3 and 4.
+The connection is simple and follows concretely from a result called [Ville's inequality](https://en.wikipedia.org/wiki/Ville%27s_inequality), summarized below.
 
 <div class="callout callout-theorem">
 <p><strong>Ville's Inequality (informal).</strong> Let $(M_t)_{t \geq 0}$ be a sequence of random variables such that $M_t \geq 0$ almost surely for all $t$ and $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ for all $t$.
@@ -272,10 +276,10 @@ P\!\left( \sup_{t \geq 0} M_t \, \geq \, 1/\alpha \right) \, \leq \, \alpha \cdo
 $$
 </div>
 
-Intuitively, this result states that if the random sequence $(M\_t)\_{t \geq 0}$ is memoryless and not increasing in expectation,[^martingale] then $M_t$ cannot be very large at *any moment in time*. 
+Intuitively, this result states that if the random sequence $(M\_t)\_{t \geq 0}$ is memoryless and not increasing in expectation,[^martingale] then $M_t$ cannot be very large at *any moment in time, even if we run the simulation infinitely far into the future*. 
 
 To see why this matters in our setting, suppose for the moment that the baseline $B$ is in fact the true data-generating distribution---i.e. $P = B$. 
-Under this assumption, the wealth process $(W\_t)\_{t \geq 0}$ satisfies all the conditions placed on $(M_t)_{t \geq 0}$ in Ville's inequality.
+Under this assumption, we can apply Ville's inequality.
 This is easy to check:
 $$
 \mathbb{E}_{X_t \sim B}\!\big[ W_t \mid W_0 \dots W_{t-1} \big]
@@ -289,6 +293,34 @@ P\!\left( \sup_{t \geq 0} W_t \, \geq \, 1/\alpha \right) \, \leq \, \alpha .
 $$
 This furnishes an *anytime-valid* hypothesis test of the null $H_0 : P = B$: we may reject $H_0$ at level $\alpha$ as soon as $W_t$ crosses $1/\alpha$, regardless of how many rounds have been played. Unlike classical fixed-sample tests, we are free to peek at the data, stop early, or keep collecting more samples adaptively, all without inflating the type I error rate.
 For example, if we use $\alpha = 0.05$ (as is customary), then we can reject the null hypothesis that $P = B$ if player $Q$'s wealth *ever* exceeds 20.
+
+## Take Home Message
+
+A central message of this post is that the expected log-likelihood ratio, $\mathcal{L}$, can be interpreted as the exponential rate at which a player generates wealth in a betting game based on forecasting future events.
+For example, $\log(2)/\mathcal{L}$ defines the time it takes for the player to double their wealth (in units of time bins).
+
+The betting game interpretation is satisfying, but it involves some effort to conceptualize and formally derive.
+In an effort to simplify the take home message, I propose two main summary statistics: the **samples to significance**, $\tau$, and the **time to signifiance**, given by $\tau \, \Delta$.
+
+<div class="callout callout-theorem">
+<p><strong>Time to Significance.</strong> 
+Let $\mathcal{L} > 0$ denote the expected log-likelihood ratio of a model $Q$ relative to baseline $B$, as in equation \eqref{eq:expected-log-likelihood-ratio}.
+The <i>samples to significance</i>, 
+$$
+\tau = \frac{-\log(\alpha)}{\mathcal{L}} ,
+$$
+reflects the number of heldout samples needed on average to reject the null hypothesis $H_0 : P = B$ at significance level $\alpha$. If each sample is a time bin of $\Delta$ seconds, the corresponding <i>time to significance</i> is given by $\tau \, \Delta = -\Delta \log(\alpha) / \mathcal{L}$.
+</p>
+</div>
+
+In practice, we estimate these quanitites by first fitting $Q$ and $B$ on training data and using heldout test data to compute an estimate of the expected log-likelihood ratio, $\widehat{\mathcal{L}}$ in \eqref{eq:empirical-log-likelihood-ratio}.
+The time to significance is a summary statistic of model performance that can be used in place of, or complementary to, the conventional "bits per spike" metric.
+For the three example cells shown, this gives $\tau \, \Delta \approx 120$ ms (strong) and $\tau \, \Delta \approx 11$ s (intermediate); for the weak cell $\widehat{\mathcal{L}} < 0$, so the threshold is never crossed and $\tau$ is undefined.
+
+Because $\tau$ is a strictly decreasing function of $\mathcal{L}$, it ranks models identically to the heldout log-likelihood (and hence to bits per spike).
+Thus, it is not a fundamentally new statistic, but a more interpretable *unit* for an existing one, answering the question: "how much data do I need to confirm that $Q$ beats $B$?"
+Quantities similar to the time to significance appear in prior literature cited below, as well as in [Wald's sequential probability ratio test](https://en.wikipedia.org/wiki/Sequential_probability_ratio_test), where $\tau$ is classically known as the *average sample number*.
+
 
 ## Further Reading
 
