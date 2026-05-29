@@ -4,12 +4,12 @@ title: "Bits per Spike as a Betting Game"
 subtitle: "A simple way to interpret heldout log-likelihood scores"
 date: 2026-05-27
 version: 2
-last_updated: 2026-05-27
+last_updated: 2026-05-29
 doi: 10.5281/zenodo.20418561
 toc: true
 changelog:
     - "v1 (2026-05-27): Initial version."
-    - "v2 (2026-05-28): Added time to significance."
+    - "v2 (2026-05-29): Added time to significance."
 tags: [statistics]
 authors:
   - name: Alex H Williams
@@ -276,22 +276,23 @@ P\!\left( \sup_{t \geq 0} M_t \, \geq \, 1/\alpha \right) \, \leq \, \alpha \cdo
 $$
 </div>
 
-Intuitively, this result states that if the random sequence $(M\_t)\_{t \geq 0}$ is memoryless and not increasing in expectation,[^martingale] then $M_t$ cannot be very large at *any moment in time, even if we run the simulation infinitely far into the future*. 
+Intuitively, this result states that if the random sequence $(M\_t)\_{t \geq 0}$ is memoryless and not increasing in expectation,[^martingale] then the probability of $(M\_t)\_{t \geq 0}$ *ever* crossing above a high threshold is small, even if we run the simulation infinitely far into the future.
+[**Supplementary Note 3**](#supplementary-note-3) sketches a quick proof of Ville's inequality.
 
-To see why this matters in our setting, suppose for the moment that the baseline $B$ is in fact the true data-generating distribution---i.e. $P = B$. 
-Under this assumption, we can apply Ville's inequality.
-This is easy to check:
+To see why this matters in our setting, suppose that the baseline $B$ is in fact the true data-generating distribution---i.e. $P = B$. 
+Then we would have
 $$
 \mathbb{E}_{X_t \sim B}\!\big[ W_t \mid W_0 \dots W_{t-1} \big]
 \,=\, W_{t-1} \cdot \mathbb{E}_{X_t \sim B} \left[ \frac{q(X_t)}{b(X_t)} \right]
 \,=\, W_{t-1} .
 $$
 since the expectation of the likelihood ratio equals one.[^expectation-derivation]
-Ville's inequality then tells us that the probability of player $Q$'s wealth *ever* exceeding the threshold $1/\alpha$---at any round of the game---is at most $\alpha$:
+This means that we can apply Ville's inequality, which tells us that the probability of player $Q$'s wealth *ever* exceeding the threshold $1/\alpha$---at any round of the game, even infinitely far into the future---is at most $\alpha$:
 $$
 P\!\left( \sup_{t \geq 0} W_t \, \geq \, 1/\alpha \right) \, \leq \, \alpha .
 $$
-This furnishes an *anytime-valid* hypothesis test of the null $H_0 : P = B$: we may reject $H_0$ at level $\alpha$ as soon as $W_t$ crosses $1/\alpha$, regardless of how many rounds have been played. Unlike classical fixed-sample tests, we are free to peek at the data, stop early, or keep collecting more samples adaptively, all without inflating the type I error rate.
+This furnishes an [*anytime-valid* hypothesis test](https://thestatsmap.com/anytime-valid-p-values) of the null $H_0 : P = B$.
+We may reject $H_0$ at level $\alpha$ as soon as $W_t$ crosses $1/\alpha$, regardless of how many rounds have been played. Unlike classical fixed-sample tests, we are free to peek at the data, stop early, or keep collecting more samples, all without inflating the type I error rate.
 For example, if we use $\alpha = 0.05$ (as is customary), then we can reject the null hypothesis that $P = B$ if player $Q$'s wealth *ever* exceeds 20.
 
 ## Take Home Message
@@ -319,7 +320,7 @@ For the three example cells shown, this gives $\tau \, \Delta \approx 120$ ms (s
 
 Because $\tau$ is a strictly decreasing function of $\mathcal{L}$, it ranks models identically to the heldout log-likelihood (and hence to bits per spike).
 Thus, it is not a fundamentally new statistic, but a more interpretable *unit* for an existing one, answering the question: "how much data do I need to confirm that $Q$ beats $B$?"
-Quantities similar to the time to significance appear in prior literature cited below, as well as in [Wald's sequential probability ratio test](https://en.wikipedia.org/wiki/Sequential_probability_ratio_test), where $\tau$ is classically known as the *average sample number*.
+Quantities similar to the time to significance appear in prior literature cited below, as well as in the context of [Wald's sequential probability ratio test](https://en.wikipedia.org/wiki/Sequential_probability_ratio_test).
 
 
 ## Further Reading
@@ -447,5 +448,61 @@ $$
 S^\star(x) \,=\, \frac{q(x)}{b(x)},
 $$
 as claimed in \eqref{eq:betting-function-equals-likelihood-ratio}. The maximum achievable value of the objective is $D_{\mathrm{KL}}(Q \,\Vert\, B)$ --- the exponential rate at which the player anticipates their wealth will grow, recovering the Kelly-criterion interpretation discussed in the main text.
+
+--------
+
+## Supplementary Note 3
+
+Here we give an informal proof sketch of Ville's inequality.
+The remarkable part of this result is that the inequality holds *uniformly over all time $t$*.
+So if we simulated a very large number of wealth trajectories (i.e. player $Q$ gets to restart and play the game many times), then only a small fraction, $\alpha$, of the trajectories would ever cross above $1/\alpha$, *even if each individual trajectory were simulated infinitely long.*
+
+Recall that we are given a discrete-time sequence $(M\_t)\_{t \geq 0}$, satisfying $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ and $M_t \geq 0$ for all $t$.
+A sequence with these two properties is called a *nonnegative supermartingale*.
+
+Let $c$ denote the first time that the trajectory crosses above a threshold $\lambda$.
+That is, $c$ is the smallest natural number such that $M_c \geq \lambda$.
+If the trajectory *never* crosses above $\lambda$, we take this as meaning $c = \infty$.
+Our goal is to prove
+$$
+\begin{equation}
+P(c~\text{is finite}) \leq \frac{\mathbb{E} [M_0]}{\lambda}
+\label{eq:ville-simplified}
+\end{equation}
+$$
+which is more-or-less identical to the result we want.
+In the main post, we chose the threshold to be $\lambda = 1/\alpha$.
+
+The trick is to define a new *nonnegative supermartingale* $(Z\_t)\_{t \geq 0}$ as 
+$$
+\begin{equation}
+Z_t = 
+\begin{cases}
+M_t & \text{if $t < c$} \\
+\lambda & \text{if $t \geq c$} \\
+\end{cases}
+\end{equation}
+$$
+Note that if $c = \infty$, then $M_t$ never crosses above the threshold and $Z_t$ is just a copy of $M_t$ for all $t$.
+It is easy to show that if $(M\_t)\_{t \geq 0}$ is a nonnegative supermartingale, then so is $(Z\_t)\_{t \geq 0}$ (exercise to the reader).
+
+Now for any fixed value of $t$, we can apply [Markov's inequality](https://en.wikipedia.org/wiki/Markov%27s_inequality) to conclude that
+$$
+\begin{equation}
+P(c \leq t) = P(Z_t \geq \lambda) \leq \frac{\mathbb{E} [Z_t]}{\lambda} \leq \frac{\mathbb{E} [Z_0]}{\lambda}
+\end{equation}
+$$
+The final inequality follows from the fact that $(Z\_t)\_{t \geq 0}$ is a nonnegative supermartingale, which implies $\mathbb{E} [ Z\_t ] \leq \mathbb{E} [ Z_0 ]$.
+
+
+Further, $\mathbb{E} [Z_0] \leq \mathbb{E} [M_0]$, since $Z_t$ is a clipped version of $M_t$.
+Thus, we have:
+$$
+\begin{equation}
+P(c \leq t) \leq \frac{\mathbb{E} [M_0]}{\lambda}.
+\end{equation}
+$$
+Notice that the right hand side is not a function of $t$.
+We can rigorously take the limit of $t \rightarrow \infty$ on both sides of the inequality to yield our desired result, equation \eqref{eq:ville-simplified}.
 
 </div>
