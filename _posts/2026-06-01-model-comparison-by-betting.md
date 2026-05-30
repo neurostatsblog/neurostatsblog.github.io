@@ -4,12 +4,12 @@ title: "Bits per Spike as a Betting Game"
 subtitle: "A simple way to interpret heldout log-likelihood scores"
 date: 2026-05-27
 version: 2
-last_updated: 2026-05-29
+last_updated: 2026-05-30
 doi: 10.5281/zenodo.20418561
 toc: true
 changelog:
     - "v1 (2026-05-27): Initial version."
-    - "v2 (2026-05-29): Added time to significance."
+    - "v2 (2026-05-30): Added time to significance + proof of Ville's ineq."
 tags: [statistics]
 authors:
   - name: Alex H Williams
@@ -20,26 +20,26 @@ reviewers: ["n/a"]
 
 Whenever we fit a model to neural or behavioral data, we need to benchmark it against simpler or well-known baselines.
 Typically this is done by reporting the difference in log-likelihoods on heldout data.
-For example, the popular "bits per spike" performance metric is simply the log (base 2) likelihood of the model minus the log (base 2) likelihood of a homogeneous Poisson process (or another appropriate baseline model), divided by the total number of spikes in the dataset.
+For example, the popular "bits per spike" performance metric (see e.g. [Pillow et al. 2008](https://doi.org/10.1038/nature07140)) is simply the log (base 2) likelihood of the model minus the log (base 2) likelihood of a homogeneous Poisson process (or another appropriate baseline model), divided by the total number of spikes in the dataset.
 
 This post offers some thoughts on how we can interpret this performance measure.
 For example, if my model gives a 0.34 bits per spike improvement over the baseline, should I interpret that as very good? Marginal? Completely inconsequential?
 
-I have struggled to answer these questions satisfactorily and this post is part of my attempt to rectify this fundamental gap in my understanding.
+I have struggled to answer these questions satisfactorily and this post is part of my attempt to rectify this gap in my understanding.
 I'll focus on a particular interpretation that imagines the model playing a betting game against the "market" defined by the baseline model.
-This game-theoretic framing has gained traction in a certain corner of statistics, a lot of which is very accessible in recent tutorials and reviews (see [**Further Reading**](#further-reading)).
+This game-theoretic framing has gained traction in a certain corner of statistics (see [**Further Reading**](#further-reading) for a brief list of introductory references).
 
 ## Basic Setup
 
-Suppose that we have fit a model $Q$ and a baseline $B$ to a set of "training data" and that we're now ready to compare them head-to-head on a set of heldout test data.
-Let $X_1, X_2, X_3, \dots$ denote a (potentially infinite) sequence of heldout data samples that we'd like to measure.
+Suppose that we have fit a model $Q$ and a baseline $B$ on training data and that we're now ready to compare them head-to-head on heldout test data.
+Let $X_1, X_2, X_3, \dots$ denote a (potentially infinite) sequence of heldout data samples.
 We assume these samples are independent and identically distributed according to an unknown distribution $P$.
 Our hope is that $Q$ is in some sense "closer" to the true distribution $P$ than the baseline model $B$.
 
 For simplicity, we'll assume that $Q$ and $B$ have strictly positive probability density or mass functions $q(x)>0$ and $b(x)>0$.
-Intuitively, this allows us to compute *likelihood ratios*, $q(X)/b(X)$ for $X \sim P$, without having to worry about divide-by-zero errors.[^divide-by-zero]
+This allows us to compute *likelihood ratios*, $q(X)/b(X)$ for $X \sim P$, without having to worry about divide-by-zero errors.[^divide-by-zero]
 
-Given an infinite amount of heldout data, a nice measure of performance is the expected log-likelihood ratio:
+A nice measure of performance is the expected log-likelihood ratio:
 $$
 \begin{equation}
 \mathcal{L} = \mathbb{E}_{X \sim P} \Big [ \log q(X)/ b(X) \Big ] = \mathbb{E}_{X \sim P} \Big [ \log q(X) - \log b(X) \Big ] 
@@ -57,15 +57,20 @@ $$
 
 We have thus far used natural logarithms, but substituting base-2 logarithms can aid interpretation.
 By the change of base formula, $\mathcal{L}_2 = \mathcal{L} / \log(2)$ is the expected base-2 log likelihood.
+The base-2 log likelihood has units of "bits", and normalizing by the number of spikes gives the popular "bits per spike" metric.
 
 Even more intriguingly, we will be able to draw a connection to null hypothesis testing at significance threshold $\alpha$ (for example, $\alpha = 0.05$).
-It turns out that the expected base-$(1/\alpha)$ log likelihood, $\mathcal{L}_{1/\alpha} = -\mathcal{L} / \log(\alpha)$, will have a very satisfying interpretation (see [**Take Home Message**](#take-home-message) at the end of this post).
+It turns out that the reciprocal of the expected base-$(1/\alpha)$ log likelihood, $\mathcal{L}_{1/\alpha}^{-1} = -\log(\alpha) / \mathcal{L}$, will have a very satisfying interpretation as the number of heldout data samples needed to reject the baseline model as a null hypothesis.
+
+*You don't need to understand the betting game to use this result!* If you wish to skip the derivation, you can jump straight to the [**Take Home Message**](#take-home-message) at the end of this post.
 
 ## A Demo of the Betting Game
 
 Our goal is to come up with intuitive interpretations of $\mathcal{L}$ as a measure of model performance.
-One way to approach this is to imagine model $Q$ as a "player" in a betting game based on forecasting values of $X_1, X_2, X_3, \dots$ sampled as heldout data.
-The bets made by the player are set by the "market" which operates according to the baseline model $B$.
+One way to approach this is to imagine model $Q$ as a "player" in a betting game.
+On each round of the game, we sample a heldout datapoint $X \sim P$ and pay the player based on how well they predicted the outcome.
+Each betting contract comes at a price, which is determined by the baseline model $B$.
+Intuitively, the more that $Q$ is able to "beat the market" by accumulating wealth, the stronger the evidence we have in favor of $Q$ over $B$.
 
 Before we get to the precise details of the game, let's look at a few examples.
 Figure 1 shows tuning curves fit to three example head-direction cells from the mouse anterior thalamus (Peyrache et al., 2015), distributed through the [**nemos**](https://nemos.readthedocs.io/) library.
@@ -84,7 +89,8 @@ Intuitively, if $Q$ is a much better model of the data than $B$ then the player 
 Throughout, we will use $W_t$ to denote the wealth of the player at round $t$ of the game.
 In Figure 2, we plot how the player's wealth $W_t$ evolves across the test set for each of the three cells.
 Every player starts with $W_0 = 1$ and the y-axis is on a $\log_2$ scale, so a value of $\log_2 W_t = 10$ means the player has doubled their wealth ten times (a $2^{10} = 1024\times$ return).
-For each cell we ran ten independent random train/test splits of the recording and overlaid all ten trajectories in one panel.
+For each cell we ran ten independent random train/test splits of the recording and overlaid all ten trajectories.[^cvcaveat]
+
 Notice that the x-axis range differs across panels --- the strong cell's wealth game unfolds over 100 time bins (5 seconds), while the weak cell's takes the full ~15 minutes of test data.
 
 ![Wealth trajectories for the three example cells, ten random train/test splits each. The y-axis is on a $\log_2$ scale (number of doublings of the starting wealth). The dashed red horizontal line at $\log_2 W_t \approx 4.3$ marks a threshold we will motivate later. Each panel uses its own x-axis range so the dynamics of each cell are visible at an appropriate scale.](/assets/img/posts/2026-06-01-betting/wealth_trajectory.png)
@@ -133,7 +139,8 @@ $$
 W_0 = 1
 $$
 At each round of the game, player $Q$ uses all of their wealth to purchase *prediction contracts*, specified by a function $C(x) > 0$.
-The player then receives a random sequence of returns $C(X_1), C(X_2), C(X_3), \dots$ over discrete rounds of the game.
+On each round, indexed by $t$, we sample an observation $X_t \sim P$ and pay the player $C(X_t)$ units of wealth.
+Thus, the player receives a random sequence of returns $C(X_1), C(X_2), C(X_3), \dots$ over discrete rounds of the game.
 The wealth updates according to:
 $$
 \begin{align}
@@ -143,8 +150,8 @@ $$
 where $\pi(C)$ denotes the *price* of the contract.
 
 Equation \eqref{eq:wealth-process-verbose} is simple.
-The first term, $W_{t-1} / \pi(C)$, is the number of contracts purchased using the wealth from the previous round.
-This is multiplied by the contract's payoff $C(X_t)$ where $X_t$ is the randomly sampled datapoint at round $t$.
+The first term, $W_{t-1} / \pi(C)$, is the *number of contracts* the player is able to purchase given their previous wealth at round $t - 1$.
+The second term, $C(X_t)$, is the payoff of each contract.
 Note that we allow the wealth and the number of purchased contracts to be infinitely divisible into fractions.
 
 Intuitively, the price of a contract is set by what people are willing to buy and sell it for, which reflects their expectations about the underlying distribution $P$.
@@ -272,17 +279,17 @@ The connection is simple and follows concretely from a result called [Ville's in
 <p><strong>Ville's Inequality (informal).</strong> Let $(M_t)_{t \geq 0}$ be a sequence of random variables such that $M_t \geq 0$ almost surely for all $t$ and $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ for all $t$.
 Then for any $\alpha > 0$,</p>
 $$
-P\!\left( \sup_{t \geq 0} M_t \, \geq \, 1/\alpha \right) \, \leq \, \alpha \cdot \mathbb{E}[M_0] .
+\textrm{Pr}\!\left( \sup_{t \geq 0} M_t \, \geq \, 1/\alpha \right) \, \leq \, \alpha \cdot \mathbb{E}[M_0] .
 $$
 </div>
 
-Intuitively, this result states that if the random sequence $(M\_t)\_{t \geq 0}$ is memoryless and not increasing in expectation,[^martingale] then the probability of $(M\_t)\_{t \geq 0}$ *ever* crossing above a high threshold is small, even if we run the simulation infinitely far into the future.
+Intuitively, this result states that if each step of the random sequence $(M\_t)\_{t \geq 0}$ is not increasing in expectation,[^martingale] then the probability of $(M\_t)\_{t \geq 0}$ *ever* crossing above a high threshold is small, even if we run the simulation infinitely far into the future.
 [**Supplementary Note 3**](#supplementary-note-3) sketches a quick proof of Ville's inequality.
 
 To see why this matters in our setting, suppose that the baseline $B$ is in fact the true data-generating distribution---i.e. $P = B$. 
 Then we would have
 $$
-\mathbb{E}_{X_t \sim B}\!\big[ W_t \mid W_0 \dots W_{t-1} \big]
+\mathbb{E}_{X_t \sim B} \big[ W_t \mid W_0 \dots W_{t-1} \big]
 \,=\, W_{t-1} \cdot \mathbb{E}_{X_t \sim B} \left[ \frac{q(X_t)}{b(X_t)} \right]
 \,=\, W_{t-1} .
 $$
@@ -301,7 +308,7 @@ A central message of this post is that the expected log-likelihood ratio, $\math
 For example, $\log(2)/\mathcal{L}$ defines the time it takes for the player to double their wealth (in units of time bins).
 
 The betting game interpretation is satisfying, but it involves some effort to conceptualize and formally derive.
-In an effort to simplify the take home message, I propose two main summary statistics: the **samples to significance**, $\tau$, and the **time to signifiance**, given by $\tau \, \Delta$.
+In an effort to simplify the take home message, I propose two main summary statistics: the **samples to significance**, $\tau$, and the **time to significance**, given by $\tau \, \Delta$.
 
 <div class="callout callout-theorem">
 <p><strong>Time to Significance.</strong> 
@@ -336,6 +343,8 @@ YouTube Tutorial Lectures by Ramdas, "A Martingale Theory of Evidence"
 Textbook by Ramdas and Wang (2025). ["Hypothesis Testing With E-Values."](https://www.stat.cmu.edu/~aramdas/ebook-final.pdf)
 
 [^divide-by-zero]: It is possible to make the math work without making this assumption. Generally, this would let us turn "$>$ relations" into "$\geq$ relations" and likewise turn "$\leq$ relations" into "$<$ relations". However, for simplicity we just stick to strict inequalities for the purpose of this post.
+
+[^cvcaveat]: It is worth pointing out an important approximation. We use ten independently generated train and test splits to generate each random wealth trajectory. Thus, we fit ten different GLM models and have them "play the betting game" on ten different heldout test sets. Thus, some of the variability in the trajectories is due to differences in the training data. Our exposition of the betting game does not account for this. Another approximation worth noting is that we do not account for autocorrelation in the observations---we shuffle the order of time bins on each split. Extending the betting game to time series data with autocorrelation could be important for comparing certain models of neural data.
 
 [^kelly]: This interpretation of KL divergence is due to JL Kelly Jr. in a [tech report from 1956](https://www.princeton.edu/~wbialek/rome/refs/kelly_56.pdf). The principle that the player should choose their bet to maximize the term in the exponent appearing in \eqref{eq:q-wealth-growth} is named after him---it is known as the [Kelly criterion](https://en.wikipedia.org/wiki/Kelly_criterion) in quantitative finance.
 
@@ -460,13 +469,13 @@ So if we simulated a very large number of wealth trajectories (i.e. player $Q$ g
 Recall that we are given a discrete-time sequence $(M\_t)\_{t \geq 0}$, satisfying $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ and $M_t \geq 0$ for all $t$.
 A sequence with these two properties is called a *nonnegative supermartingale*.
 
-Let $c$ denote the first time that the trajectory crosses above a threshold $\lambda$.
+Let $c$ denote the first time that the trajectory crosses above a threshold $\lambda > 0$.
 That is, $c$ is the smallest natural number such that $M_c \geq \lambda$.
 If the trajectory *never* crosses above $\lambda$, we take this as meaning $c = \infty$.
 Our goal is to prove
 $$
 \begin{equation}
-P(c~\text{is finite}) \leq \frac{\mathbb{E} [M_0]}{\lambda}
+\textrm{Pr}(c~\text{is finite}) \leq \frac{\mathbb{E} [M_0]}{\lambda}
 \label{eq:ville-simplified}
 \end{equation}
 $$
@@ -489,7 +498,7 @@ It is easy to show that if $(M\_t)\_{t \geq 0}$ is a nonnegative supermartingale
 Now for any fixed value of $t$, we can apply [Markov's inequality](https://en.wikipedia.org/wiki/Markov%27s_inequality) to conclude that
 $$
 \begin{equation}
-P(c \leq t) = P(Z_t \geq \lambda) \leq \frac{\mathbb{E} [Z_t]}{\lambda} \leq \frac{\mathbb{E} [Z_0]}{\lambda}
+\textrm{Pr}(c \leq t) = \textrm{Pr}(Z_t \geq \lambda) \leq \frac{\mathbb{E} [Z_t]}{\lambda} \leq \frac{\mathbb{E} [Z_0]}{\lambda}
 \end{equation}
 $$
 The final inequality follows from the fact that $(Z\_t)\_{t \geq 0}$ is a nonnegative supermartingale, which implies $\mathbb{E} [ Z\_t ] \leq \mathbb{E} [ Z_0 ]$.
@@ -499,10 +508,10 @@ Further, $\mathbb{E} [Z_0] \leq \mathbb{E} [M_0]$, since $Z_t$ is a clipped vers
 Thus, we have:
 $$
 \begin{equation}
-P(c \leq t) \leq \frac{\mathbb{E} [M_0]}{\lambda}.
+\textrm{Pr}(c \leq t) \leq \frac{\mathbb{E} [M_0]}{\lambda}.
 \end{equation}
 $$
 Notice that the right hand side is not a function of $t$.
-We can rigorously take the limit of $t \rightarrow \infty$ on both sides of the inequality to yield our desired result, equation \eqref{eq:ville-simplified}.
+There is a way to rigorously take the limit of $t \rightarrow \infty$ on both sides of the inequality to yield our desired result, equation \eqref{eq:ville-simplified}.
 
 </div>
