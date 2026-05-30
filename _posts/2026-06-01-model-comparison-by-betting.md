@@ -9,7 +9,7 @@ doi: 10.5281/zenodo.20418561
 toc: true
 changelog:
     - "v1 (2026-05-27): Initial version."
-    - "v2 (2026-05-30): Added time to significance + proof of Ville's ineq."
+    - "v2 (2026-05-30): Added time to significance."
 tags: [statistics]
 authors:
   - name: Alex H Williams
