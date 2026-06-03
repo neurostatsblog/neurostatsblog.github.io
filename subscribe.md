@@ -4,7 +4,7 @@ title: Subscribe
 permalink: /subscribe/
 ---
 
-New posts go up roughly every few weeks. Two ways to get them:
+This blog is occasionally updated without a predetermined schedule. Two ways to get notified when new posts go up:
 
 ## By email
 
