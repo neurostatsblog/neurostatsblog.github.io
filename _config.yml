@@ -6,6 +6,10 @@ description: >-
 url: "https://neurostatsblog.github.io"
 baseurl: ""
 
+# Buttondown handle drives the /subscribe page form action.
+# Leave empty to render the page with only the RSS option (graceful fallback).
+buttondown_username: "neurostatsblog"
+
 author:
   name: Alex Williams
   email: alex.h.williams@nyu.edu
