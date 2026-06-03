@@ -6,6 +6,8 @@ date: 2026-05-27
 version: 2
 last_updated: 2026-05-30
 doi: 10.5281/zenodo.20418560
+author: "Williams, Alex H"
+pdf: "/assets/pdf/2026-05-27-betting.pdf"
 toc: true
 changelog:
     - "v1 (2026-05-27): Initial version."

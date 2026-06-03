@@ -9,6 +9,40 @@
 <meta property="og:url" content="{{ page.url | absolute_url }}">
 <meta name="twitter:card" content="summary">
 
+{%- comment -%}
+  Highwire Press citation_* meta tags — for Google Scholar indexing.
+  Renders only on posts. Set `citation: false` in front matter to opt out.
+  Authors: prefers a hand-formatted `page.author` (string in "Last, First M"
+  form, or a list of such strings). Falls back to `page.authors[].name`,
+  then to `site.author.name`. citation_doi / citation_pdf_url render only
+  when the corresponding front-matter values are present.
+{%- endcomment -%}
+{%- if page.layout == 'post' and page.citation != false %}
+<!-- Google Scholar (Highwire Press) -->
+<meta name="citation_title" content="{{ page.title }}">
+{%- if page.author -%}
+{%- for a in page.author %}
+<meta name="citation_author" content="{{ a }}">
+{%- endfor -%}
+{%- elsif page.authors -%}
+{%- for a in page.authors %}
+<meta name="citation_author" content="{{ a.name | default: a }}">
+{%- endfor -%}
+{%- else %}
+<meta name="citation_author" content="{{ site.author.name }}">
+{%- endif %}
+<meta name="citation_publication_date" content="{{ page.date | date: '%Y/%m/%d' }}">
+<meta name="citation_online_date" content="{{ page.date | date: '%Y/%m/%d' }}">
+{%- if page.doi %}
+<meta name="citation_doi" content="{{ page.doi }}">
+{%- endif %}
+<meta name="citation_technical_report_institution" content="{{ page.citation_institution | default: site.title }}">
+{%- if page.pdf %}
+<meta name="citation_pdf_url" content="{{ page.pdf | absolute_url }}">
+{%- endif %}
+<meta name="citation_abstract_html_url" content="{{ page.url | absolute_url }}">
+{%- endif %}
+
 <title>{% if page.title %}{{ page.title }} · {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
 
 <!-- Fonts: Inter (sans) + JetBrains Mono (code) -->
