@@ -91,14 +91,17 @@ local function do_div(el)
   return out
 end
 
--- kramdown's GFM parser does not treat `$...$` as math, so a pair of
--- underscores inside inline math gets read as emphasis: $(M_t)_{t\geq0}$
--- renders as "(M<em>t)</em>{t≥0}". Escaping them is the standard fix —
--- kramdown unescapes `\_` back to `_` before MathJax ever sees it. Display
--- math is left alone, since kramdown does recognise `$$...$$` blocks.
+-- kramdown's GFM parser does not treat `$...$` as math, so it mangles the
+-- LaTeX inside: `_` pairs become emphasis, and any backslash escape it
+-- recognises is collapsed, turning `\{` into a bare `{` that MathJax then
+-- reads as a group delimiter rather than a brace. Escaping each of those
+-- characters makes kramdown hand MathJax back exactly what we wrote.
+--
+-- Display math is left alone: kramdown does recognise `$$...$$` blocks and
+-- passes them through untouched.
 local function do_math(el)
   if el.mathtype ~= "InlineMath" then return nil end
-  el.text = el.text:gsub("\\?_", "\\_")
+  el.text = el.text:gsub("([\\_*])", "\\%1")
   return el
 end
 
@@ -188,8 +191,12 @@ function Pandoc(doc)
   }
 
   -- Pass 2, on the pruned copy.
-  return pruned:walk {
+  local out = pruned:walk {
     Div = do_div, Span = do_span, Header = do_header,
-    Para = do_para, RawInline = do_rawinline, Math = do_math,
+    Para = do_para, RawInline = do_rawinline,
   }
+  -- Escaping runs last, over what is left. Callout bodies have already been
+  -- rendered to raw HTML by now, so their math is no longer a Math element
+  -- and correctly escapes nothing — it never passes through kramdown.
+  return out:walk { Math = do_math }
 end

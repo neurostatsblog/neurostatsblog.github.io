@@ -487,7 +487,7 @@ Note that we can construct a contract with constant payoff $C(X) = 1$, almost su
 If the price of this contract were less than one, a player would get free money by purchasing it.
 Likewise, if the price were greater than one, a player would get free money by selling it.
 
-**Putting it together.** From observation 2, it is clear that the prices $\pi(\delta_1), \dots, \pi(\delta_n)$ define a probability measure over outcomes $x \in { 1, \dots, n }$.
+**Putting it together.** From observation 2, it is clear that the prices $\pi(\delta_1), \dots, \pi(\delta_n)$ define a probability measure over outcomes $x \in \{ 1, \dots, n \}$.
 Call this probability measure $B$.
 Then, recalling that $r_i = C(i)$ denotes the return of outcome $x = i$ under the contract, we deduce from equation \eqref{eq:contract-price-decomposition}:
 $$
