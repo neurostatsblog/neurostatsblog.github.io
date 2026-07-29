@@ -1,0 +1,23 @@
+layout: post
+date: 2026-05-27
+version: 2
+last_updated: 2026-05-30
+author: "Williams, Alex H"
+pdf: "/assets/pdf/2026-05-27-betting.pdf"
+bibtex_key: williams2026betting
+bibtex_author: "Williams, Alex H."
+# Uncomment once the preprint is live; this drives the citation block, the
+# arXiv link in the header, and the Google Scholar meta tags.
+# arxiv: "2607.NNNNN"
+# arxiv_class: "q-bio.NC"
+# arxiv_title: "Bits per Spike as a Betting Game: An Interpretable Unit for Held-Out Log-Likelihood in Neural Data Analysis"
+toc: true
+changelog:
+    - "v1 (2026-05-27): Initial version."
+    - "v2 (2026-05-30): Added time to significance."
+tags: [statistics]
+authors:
+  - name: Alex H Williams
+    affiliation: New York University
+    email: alex.h.williams@nyu.edu
+reviewers: ["n/a"]

@@ -1,19 +1,34 @@
 {%- comment -%}
-  Renders a BibTeX citation block for a post. Pulls author/date/url/doi from
-  the post's YAML front matter; gracefully omits the doi field when absent.
+  Renders a BibTeX citation block for a post.
+
+  When the post has an `arxiv:` id in its front matter, that preprint is the
+  thing to cite: the block emits an @article with eprint/archivePrefix and
+  arXiv's registered DOI (10.48550/arXiv.<id>), which is what Scholar and
+  reference managers de-duplicate against. Posts with no preprint fall back
+  to an @misc pointing at the post URL.
+
+  Optional front matter:
+    arxiv        the bare id, e.g. 2607.12345
+    arxiv_class  primary category, e.g. q-bio.NC
+    arxiv_title  preprint title, when it differs from the post title
+                 (arXiv has one title field; posts split title/subtitle)
+    bibtex_key   overrides the generated <lastname><year>_<slug-word> key
+    bibtex_author  author string in BibTeX form ("Last, First" / "A and B").
+                 Defaults to the display name, which BibTeX parses correctly
+                 but less robustly than surname-first.
+
+  Note: only the first author is emitted. Fine for single-author posts; a
+  co-authored one needs `bibtex_author` set by hand.
 {%- endcomment -%}
 {%- assign first_author = page.authors[0].name | default: page.author | default: site.author.name -%}
+{%- assign cite_author = page.bibtex_author | default: first_author -%}
 {%- assign last_name = first_author | split: " " | last | downcase -%}
 {%- assign year = page.date | date: "%Y" -%}
 {%- assign slug_first = page.slug | split: "-" | first -%}
 {%- assign auto_key = last_name | append: year | append: "_" | append: slug_first -%}
 {%- assign cite_key = page.bibtex_key | default: auto_key -%}
 {%- assign post_url = page.url | absolute_url -%}
-{%- if page.doi -%}
-  {%- assign cite_url = "https://doi.org/" | append: page.doi -%}
-{%- else -%}
-  {%- assign cite_url = post_url -%}
-{%- endif -%}
+{%- assign cite_title = page.arxiv_title | default: page.title -%}
 {%- assign lb = "{" -%}
 {%- assign rb = "}" -%}
 <div class="post-actions">
@@ -21,18 +36,34 @@
     <summary>Cite this post</summary>
     <div class="post-citation-body">
       <button type="button" class="post-citation-copy" data-citation-copy aria-label="Copy BibTeX to clipboard">Copy</button>
+{%- if page.arxiv %}
+<pre><code class="language-bibtex" data-citation-bibtex>@article{{ lb }}{{ cite_key }},
+  author        = {{ lb }}{{ cite_author }}{{ rb }},
+  title         = {{ lb }}{{ cite_title }}{{ rb }},
+  year          = {{ lb }}{{ year }}{{ rb }},
+  eprint        = {{ lb }}{{ page.arxiv }}{{ rb }},
+  archivePrefix = {{ lb }}arXiv{{ rb }},{% if page.arxiv_class %}
+  primaryClass  = {{ lb }}{{ page.arxiv_class }}{{ rb }},{% endif %}
+  doi           = {{ lb }}10.48550/arXiv.{{ page.arxiv }}{{ rb }},
+{{ rb }}</code></pre>
+      <p class="post-citation-note">This post is the informal version. The arXiv
+      preprint above is the one to cite &mdash; it carries the formal statements,
+      the references, and the appendices.</p>
+{%- else %}
 <pre><code class="language-bibtex" data-citation-bibtex>@misc{{ lb }}{{ cite_key }},
-  author       = {{ lb }}{{ first_author }}{{ rb }},
-  title        = {{ lb }}{{ page.title }}{{ rb }},
+  author       = {{ lb }}{{ cite_author }}{{ rb }},
+  title        = {{ lb }}{{ cite_title }}{{ rb }},
   year         = {{ lb }}{{ year }}{{ rb }},
-  howpublished = {{ lb }}\url{{ lb }}{{ cite_url }}{{ rb }}{{ rb }},{% if page.doi %}
-  doi          = {{ lb }}{{ page.doi }}{{ rb }},{% endif %}
+  howpublished = {{ lb }}\url{{ lb }}{{ post_url }}{{ rb }}{{ rb }},
   note         = {{ lb }}{{ site.title }}{{ rb }},
 {{ rb }}</code></pre>
+{%- endif %}
     </div>
   </details>
-  {% if page.doi %}
-  <a class="post-pdf-link" href="https://doi.org/{{ page.doi }}" target="_blank" rel="noopener">View as PDF</a>
+  {% if page.arxiv %}
+  <a class="post-pdf-link" href="https://arxiv.org/pdf/{{ page.arxiv }}" target="_blank" rel="noopener">View as PDF</a>
+  {% elsif page.pdf %}
+  <a class="post-pdf-link" href="{{ page.pdf | relative_url }}" target="_blank" rel="noopener">View as PDF</a>
   {% endif %}
 </div>
 <script>

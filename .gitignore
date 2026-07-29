@@ -6,4 +6,5 @@ _site/
 vendor/
 Gemfile.lock
 .DS_Store
-pdfs/
+arxiv-papers/*/build/
+content/*/.build/

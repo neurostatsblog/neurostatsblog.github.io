@@ -16,6 +16,10 @@
   form, or a list of such strings). Falls back to `page.authors[].name`,
   then to `site.author.name`. citation_doi / citation_pdf_url render only
   when the corresponding front-matter values are present.
+
+  DOIs come from arXiv: a post with `arxiv: 2607.12345` in its front matter
+  advertises arXiv's registered DOI, 10.48550/arXiv.<id>. Posts without a
+  preprint carry no DOI.
 {%- endcomment -%}
 {%- if page.layout == 'post' and page.citation != false %}
 <!-- Google Scholar (Highwire Press) -->
@@ -33,11 +37,14 @@
 {%- endif %}
 <meta name="citation_publication_date" content="{{ page.date | date: '%Y/%m/%d' }}">
 <meta name="citation_online_date" content="{{ page.date | date: '%Y/%m/%d' }}">
-{%- if page.doi %}
-<meta name="citation_doi" content="{{ page.doi }}">
+{%- if page.arxiv %}
+<meta name="citation_doi" content="10.48550/arXiv.{{ page.arxiv }}">
+<meta name="citation_arxiv_id" content="{{ page.arxiv }}">
 {%- endif %}
 <meta name="citation_technical_report_institution" content="{{ page.citation_institution | default: site.title }}">
-{%- if page.pdf %}
+{%- if page.arxiv %}
+<meta name="citation_pdf_url" content="https://arxiv.org/pdf/{{ page.arxiv }}">
+{%- elsif page.pdf %}
 <meta name="citation_pdf_url" content="{{ page.pdf | absolute_url }}">
 {%- endif %}
 <meta name="citation_abstract_html_url" content="{{ page.url | absolute_url }}">

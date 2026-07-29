@@ -92,6 +92,11 @@ npx -y pagefind@^1 --site _site --serve
 
 ## Writing a new post
 
+> **Is this post also an arXiv preprint?** Then it is *single-sourced* and its file in
+> `_posts/` is generated — editing it directly will be overwritten. Edit
+> `content/<name>/source.md` instead and run `make`. See
+> [Editing a single-sourced post](#editing-a-single-sourced-post) below.
+
 Create a new file in `_posts/` with this naming convention:
 
 ```
@@ -179,19 +184,99 @@ Convention: bump `version` on substantive edits (added/removed content, fixed an
 
 ---
 
-## Building a post as a PDF
+## Editing a single-sourced post
 
-The repo includes a pandoc-based PDF pipeline (XeLaTeX backend) that runs in Docker — no host install of TeX needed.
+Some posts exist twice: as a page on the site, and as a citable preprint on arXiv. Their
+text lives in **one** place and both outputs are generated from it.
+
+### Where to start editing
+
+**`content/<name>/source.md`.** That is the file. For the betting post:
 
 ```bash
-# Build one post
-bin/build-pdf _posts/2026-05-13-model-comparison-by-betting.md
-
-# Build everything in _posts/
-bin/build-pdf --all
+$EDITOR content/betting/source.md
+make                       # regenerates the post, the paper, and the PDF
 ```
 
-Output is written to `pdfs/<slug>.pdf` (gitignored). The first run pulls the `pandoc/extra` image (~1.5 GB); subsequent runs are fast. Math, footnotes, and standard markdown features are all supported. The LaTeX template lives at `pdf/template.tex` — tweak it if you want different typography or a custom title block.
+Everything downstream follows automatically. `make` tracks dependencies, so it rebuilds
+only what your edit actually affected.
+
+### What is authored and what is generated
+
+| path | |
+| --- | --- |
+| `content/<name>/source.md` | **edit this** — the text, in pandoc markdown |
+| `content/<name>/meta.common.yml` | **edit this** — title/subtitle, shared by both outputs |
+| `content/<name>/meta.blog.yml` | **edit this** — Jekyll front matter (tags, changelog, …) |
+| `content/<name>/meta.paper.yml` | **edit this** — keywords, affiliation, date, … |
+| `content/<name>/build.conf` | **edit this** — where the outputs go |
+| `content/<name>/references.bib` | **edit this** — bibliography |
+| `_posts/<date>-<slug>.md` | generated — do not edit |
+| `arxiv-papers/<paper>/<slug>.pdf` | generated — the preprint |
+| `arxiv-papers/<paper>/build/` | generated — upload package, gitignored |
+
+```
+content/betting/source.md          <-- you edit here
+        │
+        ├─▶ _posts/2026-06-01-model-comparison-by-betting.md  ──▶ site HTML
+        └─▶ arxiv-papers/2026-05-27-.../bits-per-spike-betting.pdf
+            and build/arxiv-submission.tar.gz for the arXiv upload
+```
+
+The generated post **is committed**, because the GitHub Pages workflow runs plain Jekyll
+and has no pandoc. Regenerate and commit it alongside your source edit. The preprint goes
+straight from `source.md` to PDF in one pandoc pass — there is no intermediate markdown.
+
+### Making an edit land in only one of the two
+
+By default every edit lands in both. To target one output, tag it:
+
+```markdown
+::: {.paper-only}
+A methods paragraph that would bog down the post.
+:::
+
+::: {.blog-only}
+An aside that would look out of place in a preprint.
+:::
+
+This [post]{.blog-only}[note]{.paper-only} offers some thoughts...
+```
+
+The betting source is the blog post as published, plus a handful of `.paper-only` blocks
+(methods detail, limitations, code availability, references) that make it arXiv-ready.
+Figures, theorem callouts, cross-references and citations are written once in a neutral
+syntax and translated per output — see [`content/README.md`](content/README.md) for the
+full list, and [`arxiv-papers/README.md`](arxiv-papers/README.md) for submission notes.
+
+### Commands
+
+```bash
+make                       # regenerate anything out of date, end to end
+make content               # only regenerate the Jekyll posts (no LaTeX)
+make list                  # show papers and the targets they expose
+make <slug>                # one paper: preprint PDF + arXiv upload package
+make <slug>-pdf            # one paper: PDF only, faster iteration loop
+make clean                 # drop build/ dirs; keeps the committed PDFs
+make -B <target>           # force a rebuild even if nothing changed
+```
+
+`bin/build-content <dir>` and `bin/build-arxiv <dir>` are the underlying scripts if you
+want to bypass make.
+
+Everything runs in Docker — no host install of TeX or pandoc needed. The first run pulls
+the `pandoc/extra` image (~1.5 GB); subsequent runs are fast, though each pandoc/pdflatex
+pass still takes tens of seconds, which is why the dependency tracking is worth having.
+
+### A quick sanity check
+
+After `make`, `arxiv-papers/<paper>/build/arxiv-source-check.pdf` is the paper compiled
+*from the upload package*, in a container that can see nothing but that package. If it
+looks right, the arXiv submission will build.
+
+There is no longer a general "every post as a PDF" pipeline — the old `bin/build-pdf` and
+`pdf/` template directory were retired in favour of the above. Posts that are not prepared
+for arXiv have no PDF.
 
 ---
 
@@ -209,7 +294,15 @@ neurostatsblog/
 │   ├── head.html        ← <head> meta, fonts, MathJax, CSS
 │   ├── header.html      ← Nav bar with logo and dark mode toggle
 │   └── footer.html      ← Footer with links
-├── _posts/              ← Your blog posts (Markdown)
+├── _posts/              ← Blog posts; single-sourced ones are generated
+├── content/             ← Single-source text for post + preprint pairs
+│   ├── _filters/        ← Pandoc lua filters (to-blog, to-paper)
+│   └── <name>/          ← source.md, meta.*.yml, references.bib
+├── arxiv-papers/        ← Preprint sources, one dated dir per paper
+│   ├── _template/       ← Shared LaTeX template + pandoc lua filter
+│   └── YYYY-MM-DD-slug/ ← the built <slug>.pdf (+ gitignored build/)
+├── bin/build-arxiv      ← Preprint build script (driven by the Makefile)
+├── Makefile             ← Incremental `make` targets for the preprints
 ├── assets/
 │   ├── css/main.css     ← Full custom theme
 │   ├── js/main.js       ← Dark mode toggle + scroll effects

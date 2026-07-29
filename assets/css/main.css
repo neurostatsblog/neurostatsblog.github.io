@@ -1012,6 +1012,15 @@ a.tag:focus-visible {
   white-space: pre;
 }
 
+/* Sits below the BibTeX block, so it stays clear of the absolutely
+   positioned copy button anchored to the top of .post-citation-body. */
+.post-citation-note {
+  margin: var(--space-2) 0 0;
+  font-size: 0.85em;
+  line-height: 1.5;
+  color: var(--color-text-muted, #6b6860);
+}
+
 .post-citation-copy {
   position: absolute;
   top: var(--space-2);

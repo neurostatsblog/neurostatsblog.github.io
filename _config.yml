@@ -65,10 +65,12 @@ exclude:
   - Dockerfile
   - docker-compose.yml
   - vendor
-  - notes
   - code
   - bin
-  - pdf
+  - content
+  # Build products and pandoc sources, not site pages. Without these Jekyll
+  # copies source.md and the built PDFs into _site as stray static files.
+  - arxiv-papers
   - .github
   - .bundle
 
