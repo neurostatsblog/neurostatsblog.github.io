@@ -407,7 +407,7 @@ facility of **nemos**.
 
 In addition to institutional support from New York University and the Flatiron Institute (Simons Foundation), I am grateful to the McKnight Foundation and the NIH BRAIN Initiative (1RF1MH133778) for financially supporting my research program.
 
-This note is an expanded version of a blog post by the author. The writing and analyses were generated with assistance from a large language model (Claude, Anthropic). The author has checked the full text and references and is responsible for their accuracy.
+This note is an expanded version of a blog post by the author. The text and analysis code were developed with assistance from a large language model (Claude, Anthropic). The framing and the mathematical arguments are the author's own; the author has checked the full text, code implementations, and references and is responsible for their accuracy.
 
 # References
 
