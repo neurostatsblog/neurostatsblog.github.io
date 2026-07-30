@@ -1,0 +1,215 @@
+#!/usr/bin/env bash
+# Build the arXiv preprint for a piece of single-source content.
+#
+#   bin/build-arxiv content/betting
+#   bin/build-arxiv --all
+#   bin/build-arxiv --pdf content/betting     # skip the source package
+#
+# Input is content/<name>/ (see content/README.md); output lands in the
+# PAPER_DIR named by that directory's build.conf:
+#
+#   <PAPER_DIR>/<slug>.pdf                     the preprint
+#   <PAPER_DIR>/build/arxiv-submission.tar.gz  self-contained LaTeX for upload
+#   <PAPER_DIR>/build/arxiv-source-check.pdf   that package, compiled in isolation
+#
+# source.md goes to PDF in a single pandoc pass — there is no intermediate
+# paper.md. The filters chain: to-paper.lua resolves the single-source
+# syntax, unwrap-ams.lua fixes AMS environments in display math, then
+# citeproc renders the bibliography into the LaTeX template.
+#
+# arXiv asks for source rather than a bare PDF whenever the PDF was made
+# with TeX, so a .tex is generated from the same chain. citeproc bakes the
+# reference list into it — no .bib and no bibtex pass needed — and the
+# template targets pdflatex, arXiv's default engine.
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$repo_root"
+
+content_root="content"
+filters="${content_root}/_filters"
+template="arxiv-papers/_template/arxiv-template.tex"
+ams_filter="arxiv-papers/_template/unwrap-ams.lua"
+
+usage() {
+  echo "usage: $0 <content-dir> [--pdf]" >&2
+  echo "       $0 --all [--pdf]" >&2
+  echo >&2
+  echo "available content:" >&2
+  for d in "${content_root}"/*/; do
+    [[ -f "${d}meta.paper.yml" ]] && echo "  ${d%/}" >&2
+  done
+  exit 1
+}
+
+build_one() {
+  local dir="${1%/}"
+  local pdf_only="$2"
+
+  local src="${dir}/source.md"
+  local bib="${dir}/references.bib"
+  for f in "$src" "$bib" "${dir}/meta.common.yml" "${dir}/meta.paper.yml" "${dir}/build.conf"; do
+    if [[ ! -f "$f" ]]; then
+      echo "error: $f not found" >&2
+      return 1
+    fi
+  done
+  # shellcheck source=/dev/null
+  source "${dir}/build.conf"
+
+  local slug
+  slug="$(basename "$PAPER_DIR" | sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}-//')"
+
+  local build_dir="${PAPER_DIR}/build"
+  local pkg_dir="${build_dir}/arxiv-submission"
+  mkdir -p "$build_dir"
+
+  # Pandoc takes metadata from a plain YAML file; the fragments concatenate
+  # because they are disjoint mappings.
+  local meta="${build_dir}/.metadata.yaml"
+  cat "${dir}/meta.common.yml" "${dir}/meta.paper.yml" > "$meta"
+
+  # The backlink to the published post is derived, never hand-entered, so a
+  # new piece of content gets one for free and it cannot drift from where
+  # Jekyll actually serves the post. Built from the site URL, the permalink
+  # pattern, the post's `date:` and the slug in BLOG_OUT.
+  local blog_url=""
+  if [[ -n "${BLOG_OUT:-}" ]]; then
+    local site_url permalink post_date post_slug yy mm dd
+    site_url="$(sed -n 's/^url:[[:space:]]*//p' _config.yml | tr -d '"' | head -1)"
+    site_url="${site_url%/}"
+    permalink="$(sed -n 's/^permalink:[[:space:]]*//p' _config.yml | tr -d '"' | head -1)"
+    post_date="$(sed -n 's/^date:[[:space:]]*//p' "${dir}/meta.blog.yml" | tr -d '"' | head -1)"
+    post_slug="$(basename "$BLOG_OUT" .md | sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}-//')"
+    yy="${post_date%%-*}"; mm="${post_date#*-}"; dd="${mm#*-}"; mm="${mm%%-*}"
+    if [[ -n "$site_url" && -n "$permalink" && -n "$post_date" ]]; then
+      blog_url="${site_url}$(echo "$permalink" \
+        | sed -e "s|:year|${yy}|" -e "s|:month|${mm}|" \
+              -e "s|:day|${dd}|"  -e "s|:title|${post_slug}|")"
+    fi
+  fi
+
+  local pandoc_common="--from=markdown-implicit_figures \
+    --standalone \
+    --metadata-file=/data/${meta} \
+    --metadata=blog_url:${blog_url} \
+    --template=/data/${template} \
+    --lua-filter=/data/${filters}/to-paper.lua \
+    --lua-filter=/data/${ams_filter} \
+    --citeproc \
+    --bibliography=/data/${bib}"
+
+  echo "→ ${PAPER_DIR}/${slug}.pdf"
+  docker compose run --rm pdf "pandoc ${pandoc_common} \
+    --to=pdf \
+    --pdf-engine=pdflatex \
+    --output=/data/${PAPER_DIR}/${slug}.pdf \
+    /data/${src}"
+
+  if [[ "$pdf_only" == true ]]; then
+    rm -f "$meta"
+    return 0
+  fi
+
+  echo "→ assembling ${pkg_dir}/"
+  rm -rf "$pkg_dir"
+  mkdir -p "${pkg_dir}/figures"
+
+  docker compose run --rm pdf "pandoc ${pandoc_common} \
+    --to=latex \
+    --output=/data/${pkg_dir}/main.tex \
+    /data/${src}"
+  rm -f "$meta"
+
+  # Figures are build products of the analysis code, not stored with the
+  # text. Read the filenames out of the generated LaTeX so that adding a
+  # figure to source.md is all it takes.
+  local figure_dir
+  figure_dir="$(awk -F': *' '/^figure_dir:/{gsub(/"/,"",$2); print $2; exit}' "${dir}/meta.paper.yml")"
+  if [[ -z "$figure_dir" ]]; then
+    echo "error: ${dir}/meta.paper.yml has no 'figure_dir'" >&2
+    return 1
+  fi
+
+  local figures
+  figures="$(grep -o '\\includegraphics\(\[[^]]*\]\)\?{[^}]*}' "${pkg_dir}/main.tex" \
+             | sed -E 's/.*\{(.*)\}/\1/' | sort -u)"
+  if [[ -z "$figures" ]]; then
+    echo "error: no \\includegraphics found in generated LaTeX" >&2
+    return 1
+  fi
+  while IFS= read -r fig; do
+    if [[ ! -f "${figure_dir}/${fig}" ]]; then
+      echo "error: figure ${figure_dir}/${fig} not found (run the analysis code first)" >&2
+      return 1
+    fi
+    cp "${figure_dir}/${fig}" "${pkg_dir}/figures/"
+  done <<< "$figures"
+
+  # Drop the Docker-only entry from \graphicspath. It would be inert on
+  # arXiv, but leaving a path from the author's machine in a submitted
+  # source file is sloppy — and removing it is what makes the isolation
+  # test below meaningful.
+  perl -pi -e 's{^\\graphicspath\{.*\}$}{\\graphicspath\{\{figures/\}\{./\}\}}' \
+    "${pkg_dir}/main.tex"
+
+  # arXiv reads this to decide compilation order when a package holds more
+  # than one .tex. Harmless here, but it removes any ambiguity.
+  printf 'main.tex\n' > "${pkg_dir}/00README.XXX"
+
+  # Compile with only the package directory visible, so a missing figure or
+  # a stray dependency on the repo fails here rather than on arXiv. Three
+  # passes resolve \ref, \eqref and the theorem counters.
+  echo "→ test-compiling the package in isolation with pdflatex"
+  docker run --rm --platform linux/amd64 \
+    --entrypoint /bin/sh \
+    -v "${repo_root}/${pkg_dir}":/pkg -w /pkg pandoc/extra:3.1 -c "\
+    pdflatex -interaction=nonstopmode -halt-on-error main.tex >/dev/null && \
+    pdflatex -interaction=nonstopmode -halt-on-error main.tex >/dev/null && \
+    pdflatex -interaction=nonstopmode -halt-on-error main.tex >/dev/null"
+
+  # Keep the proof-of-correctness PDF, drop the LaTeX scratch files so they
+  # don't end up in the upload.
+  mv "${pkg_dir}/main.pdf" "${build_dir}/arxiv-source-check.pdf"
+  rm -f "${pkg_dir}"/main.{aux,log,out,toc}
+
+  tar -czf "${build_dir}/arxiv-submission.tar.gz" -C "$build_dir" arxiv-submission
+
+  echo
+  echo "  preprint:      ${PAPER_DIR}/${slug}.pdf"
+  echo "  arxiv upload:  ${build_dir}/arxiv-submission.tar.gz"
+  echo "  source check:  ${build_dir}/arxiv-source-check.pdf"
+  echo
+}
+
+[[ $# -eq 0 ]] && usage
+
+pdf_only=false
+target=""
+all=false
+for arg in "$@"; do
+  case "$arg" in
+    --pdf) pdf_only=true ;;
+    --all) all=true ;;
+    -*)    usage ;;
+    *)     target="$arg" ;;
+  esac
+done
+
+if [[ ! -f "$template" ]]; then
+  echo "error: template $template not found" >&2
+  exit 1
+fi
+
+if [[ "$all" == true ]]; then
+  for d in "${content_root}"/*/; do
+    [[ -f "${d}meta.paper.yml" ]] && build_one "$d" "$pdf_only"
+  done
+elif [[ -n "$target" ]]; then
+  build_one "$target" "$pdf_only"
+else
+  usage
+fi
+
+echo "done."

@@ -1,0 +1,227 @@
+%======================================================================
+% Pandoc template for the arXiv version of the betting-game note.
+%
+% Deliberately pdflatex-compatible (lmodern + T1, no fontspec) so that the
+% generated .tex can be uploaded to arXiv as source and compiled there
+% without the author having to select a non-default engine.
+%======================================================================
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{textcomp}
+
+%----------------------------------------------------------------------
+% Math
+%----------------------------------------------------------------------
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+
+%----------------------------------------------------------------------
+% Page geometry — conventional single-column preprint
+%----------------------------------------------------------------------
+\usepackage[letterpaper,margin=1in]{geometry}
+
+%----------------------------------------------------------------------
+% Colors and links
+%----------------------------------------------------------------------
+\usepackage{xcolor}
+\definecolor{linkblue}{HTML}{1A4F9C}
+\definecolor{calloutrule}{HTML}{4A4A4A}
+\definecolor{calloutbg}{HTML}{F4F3F1}
+
+\usepackage[colorlinks=true,
+            linkcolor=linkblue,
+            citecolor=linkblue,
+            urlcolor=linkblue,
+            breaklinks=true,
+            pdfborder={0 0 0}]{hyperref}
+\usepackage{url}
+
+%----------------------------------------------------------------------
+% Graphics
+%
+% Bare filenames in \includegraphics let the same source resolve figures
+% both in the Docker build (absolute /data path, from the paper's
+% `figure_dir` metadata) and in the flattened arXiv source package
+% (figures/ subdirectory). Whichever prefix exists wins; the other is
+% silently skipped.
+%----------------------------------------------------------------------
+\usepackage{graphicx}
+\graphicspath{$if(figure_dir)${/data/$figure_dir$/}$endif${figures/}{./}}
+\setkeys{Gin}{keepaspectratio}
+
+\usepackage{caption}
+\captionsetup{font=small, labelfont=bf, labelsep=period,
+              width=0.95\textwidth}
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{enumitem}
+
+%----------------------------------------------------------------------
+% Theorem-like environments. Boxed to mirror the callouts in the web
+% version, but in neutral grey rather than the site's accent color.
+%----------------------------------------------------------------------
+\usepackage{mdframed}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+
+% Wrap both environments in the box without changing how they are called
+% from the document body.
+\surroundwithmdframed[%
+  topline=false, bottomline=false, rightline=false, leftline=true,
+  linewidth=2pt, linecolor=calloutrule,
+  backgroundcolor=calloutbg,
+  skipabove=1em, skipbelow=1em,
+  innerleftmargin=12pt, innerrightmargin=10pt,
+  innertopmargin=8pt, innerbottommargin=8pt
+]{definition}
+\surroundwithmdframed[%
+  topline=false, bottomline=false, rightline=false, leftline=true,
+  linewidth=2pt, linecolor=calloutrule,
+  backgroundcolor=calloutbg,
+  skipabove=1em, skipbelow=1em,
+  innerleftmargin=12pt, innerrightmargin=10pt,
+  innertopmargin=8pt, innerbottommargin=8pt
+]{theorem}
+
+%----------------------------------------------------------------------
+% Sections — numbered, as a preprint expects
+%----------------------------------------------------------------------
+\setcounter{secnumdepth}{3}
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\normalfont\normalsize\itshape}{\thesubsubsection}{0.8em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.5em}
+\titlespacing*{\subsection}{0pt}{1.2em}{0.4em}
+
+%----------------------------------------------------------------------
+% Running head
+%----------------------------------------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhead[R]{\footnotesize\itshape $if(short_title)$$short_title$$else$$title$$endif$}
+\fancyfoot[C]{\footnotesize\thepage}
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \fancyfoot[C]{\footnotesize\thepage}%
+}
+
+%----------------------------------------------------------------------
+% Paragraphs — indented, no extra leading (standard preprint look)
+%----------------------------------------------------------------------
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{0pt}
+
+%----------------------------------------------------------------------
+% Pandoc helpers
+%----------------------------------------------------------------------
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\providecommand{\pandocbounded}[1]{#1}
+
+%----------------------------------------------------------------------
+% citeproc reference list.
+%
+% Verbatim from `pandoc --print-default-template=latex` (pandoc 3.1) so
+% that \citeproc, \citeproctext and CSLReferences match exactly what the
+% writer emits. Do not hand-edit; re-copy if the pinned pandoc changes.
+%----------------------------------------------------------------------
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+
+%----------------------------------------------------------------------
+% PDF metadata — this is what arXiv and Google Scholar read off the file
+%----------------------------------------------------------------------
+\hypersetup{
+$if(title)$  pdftitle={$title$},$endif$
+$if(author)$  pdfauthor={$author$},$endif$
+$if(keywords)$  pdfkeywords={$keywords$},$endif$
+  pdfcreator={},
+  pdfproducer={}
+}
+
+\title{\vspace{-2em}$title$$if(subtitle)$\\[0.45em]{\large\normalfont\itshape $subtitle$}$endif$\vspace{-0.4em}}
+% `affiliation` may be a single value or a list; the loop below handles both,
+% giving one line per affiliation. (Note: pandoc parses template directives
+% inside LaTeX comments too, so a bare dollar-sign here would break the build.)
+\author{$if(author)$$author$$for(affiliation)$\\[0.3em]\normalsize $affiliation$$endfor$$if(email)$\\[0.2em]\normalsize\texttt{$email$}$endif$$endif$}
+\date{$if(date)$$date$$else$\today$endif$}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{plain}
+
+$if(abstract)$
+\begin{abstract}
+\noindent $abstract$
+\end{abstract}
+$endif$
+
+$if(keywords)$
+\begingroup
+\small
+\noindent\textbf{Keywords:} $keywords$
+\par
+\endgroup
+\vspace{1em}
+$endif$
+
+% blog_url is computed by bin/build-arxiv from the post's permalink; there
+% is nothing to fill in per paper. The title is the shared one, so the two
+% can never disagree.
+$if(blog_url)$
+\begingroup
+\small
+\noindent\rule{\linewidth}{0.4pt}\par
+\vspace{0.4em}
+\noindent This material is also published as a blog post, \emph{$title$}, on
+\url{$blog_url$}.\par
+\vspace{0.3em}
+\noindent\rule{\linewidth}{0.4pt}\par
+\endgroup
+\vspace{1.2em}
+$endif$
+
+$body$
+
+\end{document}

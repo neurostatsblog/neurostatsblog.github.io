@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# Generate the Jekyll post from a piece of single-source content.
+#
+# The arXiv preprint comes off the same source.md via bin/build-arxiv,
+# which goes straight to PDF — there is no intermediate paper.md.
+#
+# Each piece of writing lives in one directory under content/:
+#
+#   content/<name>/
+#     source.md          the text — the only file you edit
+#     meta.common.yml    front matter shared by both outputs
+#     meta.blog.yml      Jekyll-only front matter
+#     meta.paper.yml     pandoc-only front matter
+#     references.bib     bibliography
+#     build.conf         where the outputs land
+#
+# and one derived file is written. It is committed to git because the
+# GitHub Pages workflow builds the site with plain Jekyll and has no pandoc:
+#
+#   _posts/<date>-<slug>.md              consumed by Jekyll
+#
+# Usage:
+#   bin/build-content content/betting
+#   bin/build-content --all
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$repo_root"
+
+content_root="content"
+filters="${content_root}/_filters"
+
+# Front matter is assembled by concatenating YAML fragments rather than
+# parsing and re-emitting them. Keeps comments and formatting intact, and
+# avoids depending on a YAML library being installed.
+emit_front_matter() {
+  echo "---"
+  cat "$1" "$2"
+  echo "---"
+  echo
+}
+
+build_one() {
+  local dir="${1%/}"
+  local src="${dir}/source.md"
+
+  if [[ ! -f "$src" ]]; then
+    echo "error: $src not found" >&2
+    return 1
+  fi
+  # shellcheck source=/dev/null
+  source "${dir}/build.conf"
+
+  local common="${dir}/meta.common.yml"
+  local bib="${dir}/references.bib"
+  local tmp="${dir}/.build"
+  mkdir -p "$tmp"
+
+  # citeproc runs here so the post carries formatted citations and a real
+  # reference list. Three writer choices matter:
+  #   -raw_attribute  keeps the filter's raw HTML bare, as kramdown needs
+  #   -citations      writes citeproc's rendered text, not native [@key]
+  #   -smart          stops apostrophes/quotes being written as \' \"
+  #   shift-heading   the post title is already an <h1>, so body starts at h2
+  echo "→ ${BLOG_OUT}"
+  docker compose run --rm pdf "pandoc \
+    --from=markdown-implicit_figures \
+    --to=markdown-raw_attribute-citations-smart \
+    --wrap=preserve \
+    --shift-heading-level-by=1 \
+    --citeproc \
+    --bibliography=/data/${bib} \
+    --lua-filter=/data/${filters}/to-blog.lua \
+    --metadata=img_dir:${IMG_DIR} \
+    --output=/data/${tmp}/blog-body.md \
+    /data/${src}"
+
+  emit_front_matter "$common" "${dir}/meta.blog.yml" > "$BLOG_OUT"
+  cat "${tmp}/blog-body.md" >> "$BLOG_OUT"
+
+  rm -rf "$tmp"
+}
+
+[[ $# -eq 0 ]] && {
+  echo "usage: $0 <content-dir>" >&2
+  echo "       $0 --all" >&2
+  exit 1
+}
+
+if [[ "$1" == "--all" ]]; then
+  for d in "${content_root}"/*/; do
+    [[ -f "${d}source.md" ]] && build_one "$d"
+  done
+else
+  build_one "$1"
+fi
+
+echo "done."

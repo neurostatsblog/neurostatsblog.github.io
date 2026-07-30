@@ -24,9 +24,9 @@ layout: default
           {% endfor %}
         </div>
         {% endif %}
-        {% if page.doi %}
+        {% if page.arxiv %}
         <div class="post-doi">
-          <a href="https://doi.org/{{ page.doi }}" rel="noopener">DOI: {{ page.doi }}</a>
+          <a href="https://arxiv.org/abs/{{ page.arxiv }}" rel="noopener">arXiv:{{ page.arxiv }}</a>
         </div>
         {% endif %}
       </div>

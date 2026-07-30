@@ -1,0 +1,10 @@
+short_title: "Bits per Spike as a Betting Game"
+author: "Alex H. Williams"
+affiliation:
+  - "Center for Neural Science, New York University"
+  - "Center for Computational Neuroscience, Flatiron Institute"
+email: "alex.h.williams@nyu.edu"
+date: "July 29, 2026"
+figure_dir: code/betting/figures
+keywords: "bits per spike, held-out log-likelihood, e-values, anytime-valid inference, game-theoretic statistics, generalized linear models, spike trains"
+link-citations: true
