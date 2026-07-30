@@ -180,7 +180,10 @@ $if(keywords)$  pdfkeywords={$keywords$},$endif$
 }
 
 \title{\vspace{-2em}$title$$if(subtitle)$\\[0.45em]{\large\normalfont\itshape $subtitle$}$endif$\vspace{-0.4em}}
-\author{$if(author)$$author$$if(affiliation)$\\[0.3em]\normalsize $affiliation$$endif$$if(email)$\\[0.2em]\normalsize\texttt{$email$}$endif$$endif$}
+% `affiliation` may be a single value or a list; the loop below handles both,
+% giving one line per affiliation. (Note: pandoc parses template directives
+% inside LaTeX comments too, so a bare dollar-sign here would break the build.)
+\author{$if(author)$$author$$for(affiliation)$\\[0.3em]\normalsize $affiliation$$endfor$$if(email)$\\[0.2em]\normalsize\texttt{$email$}$endif$$endif$}
 \date{$if(date)$$date$$else$\today$endif$}
 
 \begin{document}

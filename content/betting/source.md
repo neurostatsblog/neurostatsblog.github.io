@@ -403,6 +403,10 @@ document, are available at
 head-direction dataset of Peyrache et al. (2015), downloaded through the example-data
 facility of **nemos**.
 
+# Acknowledgements
+
+This work was supported by the McKnight Foundation.
+
 # References
 
 ::: {#refs}
