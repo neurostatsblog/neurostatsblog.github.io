@@ -339,7 +339,7 @@ reflects the number of heldout samples needed on average to reject the null hypo
 
 In practice, we estimate these quanitites by first fitting $Q$ and $B$ on training data and using heldout test data to compute an estimate of the expected log-likelihood ratio, $\widehat{\mathcal{L}}$ in \eqref{eq:empirical-log-likelihood-ratio}.
 The time to significance is a summary statistic of model performance that can be used in place of, or complementary to, the conventional "bits per spike" metric.
-For the three example cells shown, this gives $\tau \, \Delta \approx 120$ ms (strong) and $\tau \, \Delta \approx 11$ s (intermediate); for the weak cell $\widehat{\mathcal{L}} < 0$, so the threshold is never crossed and $\tau$ is undefined.
+This gives $\tau \, \Delta \approx 120$ ms for the strong example cell and $\tau \, \Delta \approx 11$ s for the intermediate example cell in the figures. For the weak example cell, $\tau$ is undefined since $\widehat{\mathcal{L}} < 0$, and so the signifiance threshold is never crossed in expectation.
 
 Because $\tau$ is a strictly decreasing function of $\mathcal{L}$, it ranks models identically to the heldout log-likelihood (and hence to bits per spike).
 Thus, it is not a fundamentally new statistic, but a more interpretable *unit* for an existing one, answering the question: "how much data do I need to confirm that $Q$ beats $B$?"
@@ -406,6 +406,8 @@ facility of **nemos**.
 # Acknowledgements
 
 In addition to institutional support from New York University and the Flatiron Institute (Simons Foundation), I am grateful to the McKnight Foundation and the NIH BRAIN Initiative (1RF1MH133778) for financially supporting my research program.
+
+This note is an expanded version of a blog post by the author. The writing and analyses were generated with assistance from a large language model (Claude, Anthropic). The author has checked the full text and references and is responsible for their accuracy.
 
 # References
 
