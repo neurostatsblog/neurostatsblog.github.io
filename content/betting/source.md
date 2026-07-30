@@ -368,15 +368,11 @@ baselines a natural extension.
 
 *Composite nulls.* The null treated here, $H_0 : P = B$, is simple: it fixes a single
 baseline distribution. In practice $B$ is itself fit to training data, so a more honest
-null would be composite---e.g., the family of all homogeneous Poisson processes. The
-e-value literature handles this case directly: against a composite null the
-growth-rate-optimal e-variable replaces the null density with its reverse information
-projection onto the family [@grunwald2024], while universal inference [@wasserman2020]
-gives a construction that needs no regularity conditions, dividing instead by the null
-likelihood maximized over the family on a held-out half. Because
+null would be composite---e.g., the family of all homogeneous Poisson processes. Because
 $B$ is estimated on training data independent of the test set, the simple-null treatment
 is a reasonable approximation, but the distinction could matter for small training sets
-and for more expressive baselines; see @ramdas2025 for a unified treatment.
+and for more expressive baselines. See @wasserman2020, @grunwald2024, and the monograph
+by @ramdas2025 for more rigorous treatment of composite nulls.
 :::
 
 ::: {.blog-only}
