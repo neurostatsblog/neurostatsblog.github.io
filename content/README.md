@@ -32,7 +32,7 @@ outputs small and reviewable.
 | `meta.common.yml` | front matter shared by both outputs (title, subtitle) |
 | `meta.blog.yml` | Jekyll-only front matter (layout, tags, changelog, …) |
 | `meta.paper.yml` | pandoc-only front matter (keywords, affiliation, date, …) |
-| `references.bib` | bibliography, read directly by both builds |
+| `references.bib` | bibliography, read directly by both builds (see `make check-refs`) |
 | `build.conf` | where the outputs land, and where the blog's PNGs live |
 
 Front matter is assembled by *concatenating* the YAML fragments, so `meta.common.yml` and
@@ -140,6 +140,25 @@ reported on stderr and rendered as `?`.
   text, not just standalone blocks, so `to-paper.lua` unwraps display math at both the
   paragraph *and* the inline level. Miss the inline case and pdflatex fails outright with
   a bad math environment delimiter.
+
+## Checking the bibliography
+
+```bash
+make check-refs
+```
+
+Resolves every DOI through doi.org and compares the returned title, year, volume and
+pages against the `.bib`. Run it before submitting anywhere.
+
+It exists because an invented DOI is not necessarily a dead one. The identifier
+`10.1561/2000000019` — plausible for a Foundations and Trends volume, and wrong for
+Ramdas & Wang — resolves perfectly well, to a 2009 survey on motion compensation. A check
+that only asks "does this resolve?" passes it; only comparing the metadata catches it.
+That is the failure mode an LLM-assisted bibliography is most prone to: the work is real,
+the identifier is confabulated.
+
+Entries without a DOI (Ville 1939) cannot be checked this way and are reported so you
+verify them by hand.
 
 ## Adding a piece
 

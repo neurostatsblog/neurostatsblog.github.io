@@ -12,6 +12,7 @@
 #   make bits-per-spike-betting        one paper, PDF + upload package
 #   make bits-per-spike-betting-pdf    one paper, PDF only (faster loop)
 #   make quick                 every paper, PDF only
+#   make check-refs            verify every DOI against the DOI registry
 #   make clean                 drop build/ dirs; keeps the committed PDFs
 #   make -B <target>           force a rebuild even if nothing changed
 #
@@ -48,7 +49,7 @@ ALL_POSTS    := $(foreach d,$(CONTENT_DIRS),$(call conf,$(d),BLOG_OUT))
 ALL_PDFS     := $(foreach d,$(CONTENT_DIRS),$(call paperdir,$(d))/$(call slug,$(d)).pdf)
 ALL_PACKAGES := $(foreach d,$(CONTENT_DIRS),$(call paperdir,$(d))/build/arxiv-submission.tar.gz)
 
-.PHONY: all papers quick content list clean help
+.PHONY: all papers quick content list check-refs clean help
 .DEFAULT_GOAL := all
 
 all: $(ALL_POSTS) $(ALL_PACKAGES)
@@ -90,8 +91,15 @@ list:
 	  printf '  %-22s make %s | make %s-pdf\n' "$$d" "$$s" "$$s"; \
 	done
 
+# Deliberately not a prerequisite of the build: it hits the network, so it
+# is a pre-submission check rather than a cost every rebuild pays. Catches
+# corrupted or invented reference metadata, which is the failure mode an
+# LLM-assisted bibliography is most prone to.
+check-refs:
+	@bin/check-refs
+
 clean:
 	rm -rf arxiv-papers/*/build content/*/.build
 
 help:
-	@sed -n '3,19p' $(MAKEFILE_LIST) | sed 's/^# \{0,1\}//'
+	@sed -n '3,20p' $(MAKEFILE_LIST) | sed 's/^# \{0,1\}//'

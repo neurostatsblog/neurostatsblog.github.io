@@ -1,0 +1,165 @@
+#!/usr/bin/env python3
+"""Verify every DOI in a BibTeX file against the DOI registry.
+
+Resolves each DOI through doi.org content negotiation and compares the
+returned metadata field by field with what the .bib claims. Catches the
+failure mode that existence-checkers miss: a reference whose work is real
+but whose metadata has been corrupted or invented — a plausible-looking DOI
+on a real paper still resolves to nothing, or to something else entirely.
+
+It cannot tell you whether a citation is *appropriate*, only whether it is
+accurate. Entries without a DOI (old books, theses) are reported as
+unverifiable and must be checked by hand.
+
+Usage:
+    bin/check-refs                       # every content/*/references.bib
+    bin/check-refs path/to/references.bib
+
+Exits non-zero if any DOI fails to resolve or any field disagrees.
+Needs python3 and network access; no third-party packages.
+"""
+
+import difflib
+import glob
+import json
+import re
+import sys
+import urllib.error
+import urllib.request
+
+CSL = "application/vnd.citationstyles.csl+json"
+UA = "check-refs (+https://github.com/neurostatsblog/neurostatsblog.github.io)"
+TIMEOUT = 25
+TITLE_MIN_RATIO = 0.85
+
+
+def parse_bib(text):
+    """Yield (key, {field: value}). Brace-counting rather than a regex, so
+    nested braces like {{NeMoS}: Neural {ModelS}} survive intact."""
+    for m in re.finditer(r"@(\w+)\s*\{\s*([^,]+),", text):
+        start = m.end()
+        depth, i = 1, m.start()
+        # walk from the opening brace of the entry to its match
+        i = text.index("{", m.start())
+        depth, j = 1, i + 1
+        while j < len(text) and depth:
+            if text[j] == "{":
+                depth += 1
+            elif text[j] == "}":
+                depth -= 1
+            j += 1
+        body = text[start:j - 1]
+
+        fields, k = {}, 0
+        while k < len(body):
+            fm = re.compile(r"(\w+)\s*=\s*\{").search(body, k)
+            if not fm:
+                break
+            d, p = 1, fm.end()
+            while p < len(body) and d:
+                if body[p] == "{":
+                    d += 1
+                elif body[p] == "}":
+                    d -= 1
+                p += 1
+            fields[fm.group(1).lower()] = " ".join(body[fm.end():p - 1].split())
+            k = p
+        yield m.group(2).strip(), fields
+
+
+def norm(s):
+    """Fold case, strip TeX braces and punctuation, collapse whitespace."""
+    s = re.sub(r"[{}\\]", "", (s or ""))
+    s = re.sub(r"[^\w\s]", " ", s.lower())
+    return " ".join(s.split())
+
+
+def norm_pages(s):
+    return (s or "").replace("--", "-").replace("–", "-").strip()
+
+
+def fetch(doi):
+    req = urllib.request.Request(
+        "https://doi.org/" + urllib.parse.quote(doi),
+        headers={"Accept": CSL, "User-Agent": UA},
+    )
+    with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+        return json.load(r)
+
+
+def check(path):
+    text = open(path, encoding="utf-8").read()
+    entries = list(parse_bib(text))
+    print(f"{path} — {len(entries)} entries")
+
+    failures, unverified = [], []
+    for key, f in entries:
+        doi = f.get("doi")
+        if not doi:
+            unverified.append(key)
+            print(f"  ?  {key:16s} no DOI — verify by hand")
+            continue
+        try:
+            meta = fetch(doi)
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError) as e:
+            failures.append(key)
+            print(f"  X  {key:16s} DOI DID NOT RESOLVE: {doi} ({e})")
+            continue
+
+        problems = []
+
+        reg_title = meta.get("title")
+        if isinstance(reg_title, list):
+            reg_title = reg_title[0] if reg_title else None
+        if reg_title and f.get("title"):
+            ratio = difflib.SequenceMatcher(None, norm(f["title"]), norm(reg_title)).ratio()
+            if ratio < TITLE_MIN_RATIO:
+                problems.append(f"title: bib={f['title']!r} registry={reg_title!r}")
+
+        parts = (meta.get("issued") or {}).get("date-parts") or [[None]]
+        for name, mine, theirs in (
+            ("year", f.get("year"), str(parts[0][0]) if parts[0][0] else None),
+            ("volume", f.get("volume"), meta.get("volume")),
+            ("pages", norm_pages(f.get("pages")), norm_pages(meta.get("page")) or None),
+        ):
+            if mine and theirs and str(mine) != str(theirs):
+                problems.append(f"{name}: bib={mine!r} registry={theirs!r}")
+
+        if problems:
+            failures.append(key)
+            print(f"  X  {key:16s} {doi}")
+            for p in problems:
+                print(f"       {p}")
+        else:
+            print(f"  ok {key:16s} {doi}")
+
+    return failures, unverified
+
+
+def main():
+    paths = sys.argv[1:] or sorted(glob.glob("content/*/references.bib"))
+    if not paths:
+        print("no bibliography found", file=sys.stderr)
+        return 1
+
+    all_fail, all_unver = [], []
+    for p in paths:
+        f, u = check(p)
+        all_fail += f
+        all_unver += u
+        print()
+
+    if all_unver:
+        print(f"{len(all_unver)} entry/entries without a DOI, not machine-checkable: "
+              + ", ".join(all_unver))
+    if all_fail:
+        print(f"FAILED: {len(all_fail)} entry/entries disagree with the registry: "
+              + ", ".join(all_fail))
+        return 1
+    print("All DOIs resolve and their metadata matches.")
+    return 0
+
+
+if __name__ == "__main__":
+    import urllib.parse  # noqa: E402  (kept next to its only use site)
+    sys.exit(main())

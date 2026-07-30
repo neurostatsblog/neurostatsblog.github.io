@@ -47,6 +47,9 @@ bin/build-arxiv --pdf content/betting   # preprint only, for faster iteration
 Everything runs inside the `pdf` service from `docker-compose.yml` (pandoc + TinyTeX);
 no local TeX installation is used.
 
+Run `make check-refs` before submitting: it resolves every DOI in the bibliography and
+compares the registry metadata against the `.bib`.
+
 Check `build/arxiv-source-check.pdf` before submitting. It is the document compiled *from
 the upload package*, in a container that can see nothing but that package — so if it looks
 right, the upload will build on arXiv.
