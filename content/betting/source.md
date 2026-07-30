@@ -405,7 +405,7 @@ facility of **nemos**.
 
 # Acknowledgements
 
-This work was supported by the McKnight Foundation.
+In addition to institutional support from New York University and the Flatiron Institute (Simons Foundation), I am grateful to the McKnight Foundation and the NIH BRAIN Initiative (1RF1MH133778) for financially supporting my research program.
 
 # References
 
