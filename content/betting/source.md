@@ -1,6 +1,6 @@
 ::: {.abstract}
 Held-out log-likelihood is the standard currency for comparing statistical models of
-neural spike trains, and is most often reported as *bits per spike* relative to a
+neural spike trains, and is often reported as *bits per spike* relative to a
 homogeneous Poisson baseline. The units of this metric are difficult to reason about:
 it is rarely obvious whether an improvement of, say, $0.34$ bits per spike is a large
 effect or a negligible one. This note develops an interpretation of held-out
@@ -8,7 +8,7 @@ log-likelihood borrowed from game-theoretic statistics. A fitted model $Q$ is tr
 as a player who bets on each upcoming observation at prices set by a baseline model
 $B$. Under the optimal (Kelly) betting strategy the player's contract function is
 exactly the likelihood ratio $q/b$, and the expected log-likelihood ratio
-$\mathcal{L}$ is exactly the exponential growth rate of the player's wealth. Because
+$\mathcal{L}$ is the exponential growth rate of the player's wealth. Because
 the wealth process is a nonnegative martingale under the null hypothesis that $B$
 generated the data, Ville's inequality turns it into an anytime-valid test: the
 baseline may be rejected at level $\alpha$ as soon as wealth exceeds $1/\alpha$. This
@@ -21,7 +21,7 @@ one, expressed in seconds of recording rather than in bits. We illustrate the
 construction on head-direction cells recorded in mouse anterior thalamus, where a
 generalized linear model reaches significance against a homogeneous Poisson baseline
 in roughly $120$ ms of held-out data for a strongly tuned cell and roughly $11$ s for
-a moderately tuned cell, while a weakly tuned cell never reaches significance.
+a moderately tuned cell.
 :::
 
 Whenever we fit a model to neural or behavioral data, we need to benchmark it against simpler or well-known baselines.
