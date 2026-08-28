@@ -67,11 +67,18 @@
 % version, but in neutral grey rather than the site's accent color.
 %----------------------------------------------------------------------
 \usepackage{mdframed}
+\usepackage{etoolbox}   % \ifstrempty, below
 
-\theoremstyle{definition}
-\newtheorem{definition}{Definition}
-\theoremstyle{plain}
-\newtheorem{theorem}{Theorem}
+% Not amsthm environments. The blocks carry their own title in the body
+% ("Ville's Inequality (informal)", "Time to Significance"), and none of them
+% is a numbered result the text refers back to, so a counter would prepend a
+% second, wrong label — and would announce a definition as a theorem. These
+% are plain framed boxes instead, matching the callouts on the web. The
+% optional argument sets the heading when a block supplies a `name`.
+\newenvironment{theorem}[1][]%
+  {\ifstrempty{#1}{}{\noindent\textbf{#1.}\space}}{}
+\newenvironment{definition}[1][]%
+  {\ifstrempty{#1}{}{\noindent\textbf{#1.}\space}}{}
 
 % Wrap both environments in the box without changing how they are called
 % from the document body.

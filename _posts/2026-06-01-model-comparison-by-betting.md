@@ -9,11 +9,9 @@ author: "Williams, Alex H"
 pdf: "/assets/pdf/2026-05-27-betting.pdf"
 bibtex_key: williams2026betting
 bibtex_author: "Williams, Alex H."
-# Uncomment once the preprint is live; this drives the citation block, the
-# arXiv link in the header, and the Google Scholar meta tags.
-# arxiv: "2607.NNNNN"
-# arxiv_class: "q-bio.NC"
-# arxiv_title: "Bits per Spike as a Betting Game: An Interpretable Unit for Held-Out Log-Likelihood in Neural Data Analysis"
+arxiv: "2607.28779"
+arxiv_class: "q-bio.NC"
+arxiv_title: "Bits per Spike as a Betting Game: An Interpretable Unit for Held-Out Log-Likelihood in Neural Data Analysis"
 toc: true
 changelog:
     - "v1 (2026-05-27): Initial version."
@@ -319,12 +317,12 @@ In an effort to simplify the take home message, I propose two main summary stati
 <p><strong>Time to Significance.</strong> Let $\mathcal{L} > 0$ denote
 the expected log-likelihood ratio of a model $Q$ relative to baseline
 $B$, as in equation $\eqref{eq:expected-log-likelihood-ratio}$. The
-<i>samples to significance</i>, $$
+<em>samples to significance</em>, $$
 \tau = \frac{-\log(\alpha)}{\mathcal{L}} ,
 $$ reflects the number of heldout samples needed on average to reject
 the null hypothesis $H_0 : P = B$ at significance level $\alpha$. If
-each sample is a time bin of $\Delta$ seconds, the corresponding <i>time
-to significance</i> is given by
+each sample is a time bin of $\Delta$ seconds, the corresponding
+<em>time to significance</em> is given by
 $\tau \, \Delta = -\Delta \log(\alpha) / \mathcal{L}$.</p>
 </div>
 

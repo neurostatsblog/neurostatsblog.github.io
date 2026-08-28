@@ -4,24 +4,16 @@ neural spike trains, and is often reported as *bits per spike* relative to a
 homogeneous Poisson baseline. The units of this metric are difficult to reason about:
 it is rarely obvious whether an improvement of, say, $0.34$ bits per spike is a large
 effect or a negligible one. This note develops an interpretation of held-out
-log-likelihood borrowed from game-theoretic statistics. A fitted model $Q$ is treated
-as a player who bets on each upcoming observation at prices set by a baseline model
-$B$. Under the optimal (Kelly) betting strategy the player's contract function is
-exactly the likelihood ratio $q/b$, and the expected log-likelihood ratio
-$\mathcal{L}$ is the exponential growth rate of the player's wealth. Because
-the wealth process is a nonnegative martingale under the null hypothesis that $B$
-generated the data, Ville's inequality turns it into an anytime-valid test: the
-baseline may be rejected at level $\alpha$ as soon as wealth exceeds $1/\alpha$. This
-yields a simple summary statistic, the *time to significance*
-$\tau \Delta = -\Delta \log(\alpha) / \mathcal{L}$, which is the amount of held-out
-recording needed on average to reject the baseline at level $\alpha$. Since $\tau$ is
-a strictly decreasing function of $\mathcal{L}$, it ranks models identically to bits
-per spike; it is not a new statistic but a more interpretable unit for an existing
-one, expressed in seconds of recording rather than in bits. We illustrate the
-construction on head-direction cells recorded in mouse anterior thalamus, where a
-generalized linear model reaches significance against a homogeneous Poisson baseline
-in roughly $120$ ms of held-out data for a strongly tuned cell and roughly $11$ s for
-a moderately tuned cell.
+log-likelihood borrowed from game-theoretic statistics. If $\mathcal{L}$ denotes a model's
+expected log-likelihood ratio to the homogeneous Poisson baseline,
+then we show that $-\log(\alpha) / \mathcal{L}$ represents the number of held-out time bins
+of recording needed to reject the baseline at level $\alpha$ under a particular null
+hypothesis testing procedure based on a betting game.
+Thus, a simple re-scaling of the heldout log-likelihood yields an intuitive metric of
+model performance in units of recording time which answers ``how much heldout data would
+I need, on average, to disprove the null.''
+We illustrate the construction on head-direction cells recorded in mouse anterior thalamus, where a
+generalized linear model reaches significance in roughly $120$ ms of held-out data for a strongly tuned cell and roughly $11$ s for a moderately tuned cell.
 :::
 
 Whenever we fit a model to neural or behavioral data, we need to benchmark it against simpler or well-known baselines.
@@ -193,7 +185,7 @@ by the definition of $S$.
 Therefore, for the rest of this [post]{.blog-only}[note]{.paper-only} we will focus on the simplified wealth process
 
 ::: {.theorem}
-<strong>Simplified wealth process.</strong> 
+**Simplified wealth process.** 
 Assuming that the player purchases positive contracts $S(x) > 0$ of unit price, i.e.
 $$
 \begin{align}
@@ -293,7 +285,7 @@ We have not yet drawn a rigorous connection to null hypothesis testing, as promi
 The connection is simple and follows concretely from a result called [[Ville's inequality](https://en.wikipedia.org/wiki/Ville%27s_inequality)]{.blog-only}[Ville's inequality [@ville1939; @howard2020]]{.paper-only}, summarized below.
 
 ::: {.theorem}
-<strong>Ville's Inequality (informal).</strong> Let $(M_t)_{t \geq 0}$ be a sequence of random variables such that $M_t \geq 0$ almost surely for all $t$ and $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ for all $t$.
+**Ville's Inequality (informal).** Let $(M_t)_{t \geq 0}$ be a sequence of random variables such that $M_t \geq 0$ almost surely for all $t$ and $\mathbb{E}[M_{t} \mid M_0, \dots, M_{t-1}] \leq M_{t-1}$ for all $t$.
 Then for any $\alpha > 0$,
 $$
 \textrm{Pr}\!\left( \sup_{t \geq 0} M_t \, \geq \, 1/\alpha \right) \, \leq \, \alpha \cdot \mathbb{E}[M_0] .
@@ -328,13 +320,13 @@ The betting game interpretation is satisfying, but it involves some effort to co
 In an effort to simplify the take home message, I propose two main summary statistics: the **samples to significance**, $\tau$, and the **time to significance**, given by $\tau \, \Delta$.
 
 ::: {.theorem}
-<strong>Time to Significance.</strong> 
+**Time to Significance.** 
 Let $\mathcal{L} > 0$ denote the expected log-likelihood ratio of a model $Q$ relative to baseline $B$, as in equation \eqref{eq:expected-log-likelihood-ratio}.
-The <i>samples to significance</i>, 
+The *samples to significance*, 
 $$
 \tau = \frac{-\log(\alpha)}{\mathcal{L}} ,
 $$
-reflects the number of heldout samples needed on average to reject the null hypothesis $H_0 : P = B$ at significance level $\alpha$. If each sample is a time bin of $\Delta$ seconds, the corresponding <i>time to significance</i> is given by $\tau \, \Delta = -\Delta \log(\alpha) / \mathcal{L}$.
+reflects the number of heldout samples needed on average to reject the null hypothesis $H_0 : P = B$ at significance level $\alpha$. If each sample is a time bin of $\Delta$ seconds, the corresponding *time to significance* is given by $\tau \, \Delta = -\Delta \log(\alpha) / \mathcal{L}$.
 :::
 
 In practice, we estimate these quanitites by first fitting $Q$ and $B$ on training data and using heldout test data to compute an estimate of the expected log-likelihood ratio, $\widehat{\mathcal{L}}$ in \eqref{eq:empirical-log-likelihood-ratio}.
@@ -403,7 +395,7 @@ facility of **nemos**.
 
 In addition to institutional support from New York University and the Flatiron Institute (Simons Foundation), I am grateful to the McKnight Foundation and the NIH BRAIN Initiative (1RF1MH133778) for financially supporting my research program.
 
-This note is an expanded version of a blog post by the author. A large language model (Claude, Anthropic) was used to facilitate portions of the text and code. The framing and the mathematical arguments are the author's own. The author has checked the full text, code implementations, and references and is responsible for their accuracy.
+This note is an expanded version of a blog post by the author. A large language model (Claude, Anthropic) was used to facilitate small portions of the text and code. The framing and the mathematical arguments are the author's own. The author has checked the full text, code implementations, and references and is responsible for their accuracy.
 
 # References
 
